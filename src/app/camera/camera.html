@@ -1,0 +1,11 @@
+<div class="camera">
+  <video #video (canplay)="captureFrames()">Video stream not available.</video>
+  <button (click)="takePhoto()" (click)="takePicture($event)">Capture photo</button>
+</div>
+
+<canvas #canvas></canvas>
+<div class="output">
+  <img #photo alt="The screen capture will appear in this box." />
+</div>
+
+<pre>{{ res() | json }}</pre>
