@@ -1,5 +1,3 @@
-<router-outlet />
-
 <div class="container">
   <div class="header">
     <div>
@@ -7,12 +5,13 @@
       <div class="subtitle">Подберите лучший артефакт под персонажей и наборы</div>
     </div>
   </div>
-<input type="file" (change)="onFileChange($event)">
+
+  <input type="file" (change)="onFileChange($event)" />
   <div class="card">
-    <div class="form">
+    <form [formGroup]="artifactForm" class="form">
       <div class="field">
         <label>Сет</label>
-        <select [ngModel]="setName()" (ngModelChange)="setName.set($event)">
+        <select formControlName="setName">
           <option value="">—</option>
           @for (s of artefactSets; track s) {
           <option [value]="s">{{ s }}</option>
@@ -21,7 +20,7 @@
       </div>
       <div class="field">
         <label>Кусок</label>
-        <select [ngModel]="piece()" (ngModelChange)="onPieceChange($event)">
+        <select formControlName="setPartType">
           <option value="">—</option>
           @for (p of pieces; track p) {
           <option [value]="p">{{ p }}</option>
@@ -30,7 +29,7 @@
       </div>
       <div class="field">
         <label>Верхний стат</label>
-        <select [ngModel]="mainStat()" (ngModelChange)="mainStat.set($event)">
+        <select formControlName="mainStat">
           <option value="">—</option>
           @for (m of mainStatOptions(); track m) {
           <option [value]="m">{{ m }}</option>
@@ -40,73 +39,31 @@
 
       <div class="field">
         <label>ATK %</label>
-        <input
-          type="number"
-          step="0.1"
-          [max]="35"
-          [ngModel]="atk()"
-          (ngModelChange)="atk.set($event)"
-        />
+        <input type="number" step="0.1" [max]="35" formControlName="atk" />
       </div>
       <div class="field">
         <label>HP %</label>
-        <input
-          type="number"
-          step="0.1"
-          [max]="35"
-          [ngModel]="hp()"
-          (ngModelChange)="hp.set($event)"
-        />
+        <input type="number" step="0.1" [max]="35" formControlName="hp" />
       </div>
       <div class="field">
         <label>DEF %</label>
-        <input
-          type="number"
-          step="0.1"
-          [max]="43.7"
-          [ngModel]="def()"
-          (ngModelChange)="def.set($event)"
-        />
+        <input type="number" step="0.1" [max]="43.7" formControlName="def" />
       </div>
       <div class="field">
         <label>Крит. урон %</label>
-        <input
-          type="number"
-          step="0.1"
-          [max]="46.6"
-          [ngModel]="critdmg()"
-          (ngModelChange)="critdmg.set($event)"
-        />
+        <input type="number" step="0.1" [max]="46.6" formControlName="critdmg" />
       </div>
       <div class="field">
         <label>Шанс крита %</label>
-        <input
-          type="number"
-          step="0.1"
-          [max]="23.3"
-          [ngModel]="critrate()"
-          (ngModelChange)="critrate.set($event)"
-        />
+        <input type="number" step="0.1" [max]="23.3" formControlName="critrate" />
       </div>
       <div class="field">
         <label>Восст. энергии %</label>
-        <input
-          type="number"
-          step="0.1"
-          [max]="38.9"
-          [ngModel]="er()"
-          (ngModelChange)="er.set($event)"
-        />
+        <input type="number" step="0.1" [max]="38.9" formControlName="er" />
       </div>
       <div class="field">
         <label>Мастерство стихий</label>
-        <input
-          type="number"
-          step="1"
-          [max]="140"
-          [ngModel]="em()"
-          (ngModelChange)="em.set($event)"
-        />
+        <input type="number" step="1" [max]="140" formControlName="em" />
       </div>
 
       <div class="actions">
@@ -118,12 +75,11 @@
         <input
           type="text"
           placeholder="Имя, оценка или сет"
-          [ngModel]="searchText()"
-          (ngModelChange)="searchText.set($event)"
+          [formControl]="searchText"
           (keyup.enter)="search()"
         />
       </div>
-    </div>
+    </form>
 
     <div class="legend">
       <span class="chip"><span class="dot" style="background: greenyellow"></span>Идеально</span>

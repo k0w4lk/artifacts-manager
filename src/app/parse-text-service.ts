@@ -1,15 +1,27 @@
 import { Injectable, signal } from '@angular/core';
 import { ALL_ARTEFACTS } from './models/art-names';
-import { ALL_STATS, ArtefactSetPart, PART_MAIN_STATS_MAP } from './models/stat-names';
+import { ALL_STATS, ArtefactSetPart, PART_MAIN_STATS_MAP, STATS } from './models/stat-names';
 import { createWorker } from 'tesseract.js';
+
+export interface Artifact {
+  setName: string;
+  setPartType: string;
+  stats: Map<string, Stat>;
+}
+
+export interface Stat {
+  key: keyof typeof STATS;
+  value: number;
+  percent: boolean;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class ParseTextService {
-  res = signal<any>(null);
+  res = signal<Artifact | null>(null);
 
-  main(base64Image: string) {
+  OCRSpace(base64Image: string) {
     const config = {
       language: 'rus',
       isOverlayRequired: false,
@@ -36,27 +48,53 @@ export class ParseTextService {
       .then((res) => res.json())
       .then((res) => {
         const text = res.ParsedResults[0].ParsedText;
-        const setName = ALL_ARTEFACTS.find(art => text.includes(art));
-        const setPart = Object.values(ArtefactSetPart).find(part => text.includes(part));
-        const mainStats = PART_MAIN_STATS_MAP.get(setPart as ArtefactSetPart);
-        const statRegex = new RegExp(`(${ALL_STATS?.join('|')})[\\s|\\n]\\+*(\\d+[,\\s]*\\d*)(%*)`, 'gm');
-        const stats = text.match(statRegex);
-        const statsMap = new Map<string, {value: number, percent: boolean}>();
-        stats?.forEach((stat:string) => {
-          const statIndex = stat.split('').findIndex(char => /[0-9]/.test(char));
-          const statName = stat.substring(0, statIndex).replace('+', '').trim();
-          const statValue = stat.substring(statIndex).trim();
-          statsMap.set(statName, {value: +statValue.replace('%', '').replace(' ', '').replace(',', '.'), percent: statValue.includes('%')});
-        });
-        this.res.set(text);
-        console.log(setName, setPart, mainStats, stats, statsMap, text, statRegex);
+        this.#parse(text);
       });
   }
+
   tesseract(file: File) {
     (async () => {
-      const worker = await createWorker('eng');
+      const worker = await createWorker('rus');
+
+      await worker.setParameters({
+        preserve_interword_spaces: '1',
+      });
+
       const ret = await worker.recognize(file);
-      console.log(ret.data.text);
+
+      this.#parse(ret.data.text);
       await worker.terminate();
     })();
-}}
+  }
+
+  #parse(text: string) {
+    const setName = ALL_ARTEFACTS.find((art) => text.includes(art)) || '';
+    const setPart = Object.values(ArtefactSetPart).find((part) => text.includes(part)) || '';
+    const mainStatRegex = new RegExp(`(${ALL_STATS?.join('|')}).*\\n*(\\d+[,\\s]*\\d*)(%*)`, 'm');
+    const statRegex = new RegExp(
+      `(${ALL_STATS?.join('|')})[\\s|\\n]\\+*(\\d+[,\\s]*\\d*)(%*)`,
+      'gm'
+    );
+    const mainStat = text.match(mainStatRegex);
+
+    const stats = text.match(statRegex)?.slice(-4);
+
+    const statsMap = new Map<string, Stat>();
+    statsMap.set(mainStat![1], {
+      key: STATS.find((stat) => stat.name === mainStat![1])?.key as keyof typeof STATS,
+      value: +mainStat![2].replace(',', '.'),
+      percent: mainStat?.[3] === '%',
+    });
+    stats?.forEach((stat: string) => {
+      const statIndex = stat.split('').findIndex((char) => /[0-9]/.test(char));
+      const statName = stat.substring(0, statIndex).replace('+', '').trim();
+      const statValue = stat.substring(statIndex).trim();
+      statsMap.set(statName, {
+        key: STATS.find((stat) => stat.name === statName)?.key as keyof typeof STATS,
+        value: +statValue.replace('%', '').replace(' ', '').replace(',', '.'),
+        percent: statValue.includes('%'),
+      });
+    });
+    this.res.set({ setName, setPartType: setPart, stats: statsMap });
+  }
+}

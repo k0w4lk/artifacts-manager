@@ -77,7 +77,7 @@ export class Camera {
 
       const data = canvas.toDataURL('image/png');
       // const file = this.dataURLtoFile(data, 'kek.png');
-      this.parseTextService.main(data);
+      this.parseTextService.OCRSpace(data);
 
       photo.setAttribute('src', data);
     } else {
