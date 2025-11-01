@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { ALL_ARTEFACTS } from './models/art-names';
@@ -18,6 +18,7 @@ import { MAXIMUM_ROLL } from './models/maximum-roll';
 import { STAT_BOUNDS } from './models/stat-bounds';
 import { CHARACTERS } from './data/characters';
 import type { Artefact, Character } from './models/types';
+import { ParseTextService } from './parse-text-service';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ import type { Artefact, Character } from './models/types';
   styleUrl: './app.css',
 })
 export class App {
+  readonly parseTextService = inject(ParseTextService);
   protected readonly title = signal('statcounter');
 
   protected readonly artefactSets = ALL_ARTEFACTS;
@@ -129,6 +131,19 @@ export class App {
       piece,
     };
     return artefact;
+  }
+
+  protected onFileChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    //this.parseTextService.tesseract(file!);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        this.parseTextService.main(base64);
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   protected calculate() {

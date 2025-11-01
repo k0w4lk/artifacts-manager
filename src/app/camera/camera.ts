@@ -1,6 +1,7 @@
 import { JsonPipe } from '@angular/common';
-import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ParseTextService } from '../parse-text-service';
 
 @Component({
   selector: 'app-camera',
@@ -9,14 +10,13 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './camera.css',
 })
 export class Camera {
+  readonly parseTextService = inject(ParseTextService);
   readonly canvasElRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   readonly videoElRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   readonly imgElRef = viewChild<ElementRef<HTMLImageElement>>('photo');
 
   width = 320; // We will scale the photo width to this
   height = 0; // This will be computed based on the input stream
-
-  res = signal<any>(null);
 
   streaming = false;
 
@@ -77,44 +77,13 @@ export class Camera {
 
       const data = canvas.toDataURL('image/png');
       // const file = this.dataURLtoFile(data, 'kek.png');
-      this.main(data);
+      this.parseTextService.main(data);
 
       photo.setAttribute('src', data);
     } else {
       this.clearPhoto();
     }
     event.preventDefault();
-  }
-
-  main(base64Image: string) {
-    const config = {
-      language: 'rus',
-      isOverlayRequired: false,
-      iscreatesearchablepdf: false,
-      issearchablepdfhidetextlayer: false,
-      OCREngine: 2,
-      base64Image,
-      filetype: 'png',
-    };
-
-    const data = new FormData();
-
-    Object.entries(config).forEach(([k, v]) => {
-      data.append(k, v as any);
-    });
-
-    fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      headers: {
-        apikey: 'K89906720888957',
-      },
-      body: data,
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        this.res.set(res);
-        console.log(res);
-      });
   }
 
   dataURLtoFile(dataurl: string, filename: string) {
