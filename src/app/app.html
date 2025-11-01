@@ -1,0 +1,160 @@
+<router-outlet />
+
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="title">StatCounter</div>
+      <div class="subtitle">Подберите лучший артефакт под персонажей и наборы</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="form">
+      <div class="field">
+        <label>Сет</label>
+        <select [ngModel]="setName()" (ngModelChange)="setName.set($event)">
+          <option value="">—</option>
+          @for (s of artefactSets; track s) {
+          <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Кусок</label>
+        <select [ngModel]="piece()" (ngModelChange)="onPieceChange($event)">
+          <option value="">—</option>
+          @for (p of pieces; track p) {
+          <option [value]="p">{{ p }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Верхний стат</label>
+        <select [ngModel]="mainStat()" (ngModelChange)="mainStat.set($event)">
+          <option value="">—</option>
+          @for (m of mainStatOptions(); track m) {
+          <option [value]="m">{{ m }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>ATK %</label>
+        <input
+          type="number"
+          step="0.1"
+          [max]="35"
+          [ngModel]="atk()"
+          (ngModelChange)="atk.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label>HP %</label>
+        <input
+          type="number"
+          step="0.1"
+          [max]="35"
+          [ngModel]="hp()"
+          (ngModelChange)="hp.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label>DEF %</label>
+        <input
+          type="number"
+          step="0.1"
+          [max]="43.7"
+          [ngModel]="def()"
+          (ngModelChange)="def.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label>Крит. урон %</label>
+        <input
+          type="number"
+          step="0.1"
+          [max]="46.6"
+          [ngModel]="critdmg()"
+          (ngModelChange)="critdmg.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label>Шанс крита %</label>
+        <input
+          type="number"
+          step="0.1"
+          [max]="23.3"
+          [ngModel]="critrate()"
+          (ngModelChange)="critrate.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label>Восст. энергии %</label>
+        <input
+          type="number"
+          step="0.1"
+          [max]="38.9"
+          [ngModel]="er()"
+          (ngModelChange)="er.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label>Мастерство стихий</label>
+        <input
+          type="number"
+          step="1"
+          [max]="140"
+          [ngModel]="em()"
+          (ngModelChange)="em.set($event)"
+        />
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" (click)="calculate()">Рассчитать</button>
+        <button class="btn btn-ghost" (click)="clear()">Очистить</button>
+      </div>
+      <div class="field">
+        <label>Поиск</label>
+        <input
+          type="text"
+          placeholder="Имя, оценка или сет"
+          [ngModel]="searchText()"
+          (ngModelChange)="searchText.set($event)"
+          (keyup.enter)="search()"
+        />
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background: greenyellow"></span>Идеально</span>
+      <span class="chip"><span class="dot" style="background: yellow"></span>Отлично</span>
+      <span class="chip"><span class="dot" style="background: orange"></span>Хорошо</span>
+      <span class="chip"
+        ><span class="dot" style="background: lightskyblue"></span>СОВЕРШЕННО!</span
+      >
+      <span class="chip"><span class="dot" style="background: red"></span>Так себе</span>
+      <span class="chip"><span class="dot" style="background: deeppink"></span>Оффсетник</span>
+    </div>
+  </div>
+
+  <div class="card table-card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 34%">Персонаж</th>
+          <th style="width: 33%">Статы</th>
+          <th style="width: 33%">Сет</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of results(); track row.name) {
+        <tr>
+          <td>{{ row.name }}</td>
+          <td [style.color]="colorizeStat(row.stat)">{{ row.stat }}</td>
+          <td [style.color]="colorizeSet(row.set)">{{ row.set }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

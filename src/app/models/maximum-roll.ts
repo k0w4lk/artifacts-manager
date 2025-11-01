@@ -1,0 +1,9 @@
+export const MAXIMUM_ROLL = {
+  CRIT_DMG: 7.8,
+  CRIT_RATE: 3.9,
+  ELEMENTAL_MASTERY: 23,
+  ATK_PERCENT: 5.8,
+  ENERGY_RECHARGE: 6.5,
+  HP_PERCENT: 5.8,
+  DEF_PERCENT: 7.3,
+} as const;
