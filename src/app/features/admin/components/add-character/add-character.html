@@ -1,1 +1,94 @@
-<form></form>
+<mat-dialog-content>
+  <form class="form" [formGroup]="form">
+    <mat-form-field>
+      <mat-label>Character name</mat-label>
+      <input matInput required placeholder="Keqing" formControlName="nameEn" />
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Main sets</mat-label>
+      <mat-select multiple formControlName="mainSets">
+        @for(set of sets(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Alt sets</mat-label>
+      <mat-select multiple formControlName="altSets">
+        @for(set of sets(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Half-bonus sets</mat-label>
+      <mat-select multiple formControlName="subSets">
+        @for(set of sets(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Perfect stats</mat-label>
+      <mat-select multiple formControlName="perfectStats">
+        @for(set of stats(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Good stats</mat-label>
+      <mat-select multiple formControlName="goodStats">
+        @for(set of stats(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>OK stats</mat-label>
+      <mat-select multiple formControlName="okStats">
+        @for(set of stats(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Sands stats</mat-label>
+      <mat-select multiple formControlName="sandsStats">
+        @for(set of stats(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Goblet stats</mat-label>
+      <mat-select multiple formControlName="gobletStats">
+        @for(set of stats(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Crown stats</mat-label>
+      <mat-select multiple formControlName="crownStats">
+        @for(set of stats(); track set.id) {
+        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button matDialogClose matButton="outlined" type="button">Cancel</button>
+  <button matButton="filled" type="button" (click)="add()">Add</button>
+</mat-dialog-actions>
