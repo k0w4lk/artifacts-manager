@@ -24,7 +24,7 @@ import { Artifact, ParseTextService, Stat } from './parse-text-service';
 
 @Component({
   selector: 'app-root',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -68,13 +68,12 @@ export class App {
   }
 
   protected onPieceChange(value: Artifact | null) {
-    console.log();
     this.artifactForm.patchValue({
       setName: value?.setName,
       setPartType: value?.setPartType,
       mainStat:
         STATS.find((stat) => {
-          return stat.key === Array.from(value?.stats.entries()!)[0][1].key;
+          return stat.key === Array.from(value?.stats?.entries() || [])?.[0]?.[1]?.key;
         })?.name ?? null,
       atk: value?.stats.get(ATK_PERCENT)?.value ?? null,
       hp: value?.stats.get(HP_PERCENT)?.value ?? null,
