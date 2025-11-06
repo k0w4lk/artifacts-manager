@@ -2,23 +2,25 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { DataService } from '../../core/services/data-service';
-import { MAXIMUM_ROLL } from '../../models/maximum-roll';
+import { Result } from '../../core/utils/result-interface';
 import {
-  STATS,
   ATK_PERCENT,
-  HP_PERCENT,
-  DEF_PERCENT,
   CRIT_DMG,
   CRIT_RATE,
-  ENERGY_RECHARGE,
+  DEF_PERCENT,
   ELEMENTAL_MASTERY,
-} from '../../models/stat-names';
-import { Artefact, Character } from '../../models/types';
-import { ParseTextService, Artifact } from '../../parse-text-service';
+  ENERGY_RECHARGE,
+  HP_PERCENT,
+  STATS,
+} from '../../core/utils/stat-names';
+import { Artefact, Character } from '../../core/utils/types';
+import { Artifact, ParseTextService } from '../../parse-text-service';
+import { ExtractStatsPipe } from '../../ui/pipes/extract-stats-pipe';
+import { Results } from '../results/results';
 
 @Component({
   selector: 'app-stats-counter',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Results],
   templateUrl: './stats-counter.html',
   styleUrl: './stats-counter.css',
 })
@@ -26,17 +28,22 @@ export class StatsCounter {
   readonly dataService = inject(DataService);
   readonly parseTextService = inject(ParseTextService);
 
+  readonly extractStatsPipe = new ExtractStatsPipe();
+
   readonly artifactForm = new FormGroup({
     setName: new FormControl<string | null>(null),
     setPartType: new FormControl<string | null>(null),
     mainStat: new FormControl<string | null>(null),
+    atkPercent: new FormControl<number | null>(5.4),
+    hpPercent: new FormControl<number | null>(4.1),
+    defPercent: new FormControl<number | null>(null),
     atk: new FormControl<number | null>(null),
     hp: new FormControl<number | null>(null),
     def: new FormControl<number | null>(null),
-    er: new FormControl<number | null>(null),
+    er: new FormControl<number | null>(4.5),
     em: new FormControl<number | null>(null),
-    critdmg: new FormControl<number | null>(null),
-    critrate: new FormControl<number | null>(null),
+    critDmg: new FormControl<number | null>(null),
+    critRate: new FormControl<number | null>(2.7),
   });
 
   readonly #currentSetPart = toSignal(this.artifactForm.controls.setPartType.valueChanges);
@@ -44,15 +51,17 @@ export class StatsCounter {
   readonly partMainStats = computed(() => {
     const mainStatsIds = this.dataService
       .setParts()
-      .find((p) => p.nameEn === this.#currentSetPart())?.mainStats;
+      .find((p) => p.nameRu === this.#currentSetPart())?.mainStats;
     const mainStatNames = this.dataService.stats().filter((s) => !!mainStatsIds?.includes(s.id));
     return mainStatNames;
   });
 
   protected searchText = new FormControl<string>('');
 
-  protected results = signal<{ name: string; stat: string; set: string }[]>([]);
-  protected backup = signal<{ name: string; stat: string; set: string }[]>([]);
+  protected results = signal<Result[]>([]);
+  protected backup = signal<Result[]>([]);
+
+  readonly displayedResults = computed(() => this.results().filter((res) => Boolean(res.setType)));
 
   constructor() {
     effect(() => {
@@ -63,69 +72,19 @@ export class StatsCounter {
   protected onPieceChange(value: Artifact | null) {
     this.artifactForm.patchValue({
       setName: value?.setName,
-      setPartType: value?.setPartType,
+      setPartType: value?.setPartType ?? 'Цветок жизни',
       mainStat:
         STATS.find((stat) => {
           return stat.key === Array.from(value?.stats?.entries() || [])?.[0]?.[1]?.key;
-        })?.name ?? null,
-      atk: value?.stats.get(ATK_PERCENT)?.value ?? null,
-      hp: value?.stats.get(HP_PERCENT)?.value ?? null,
-      def: value?.stats.get(DEF_PERCENT)?.value ?? null,
-      critdmg: value?.stats.get(CRIT_DMG)?.value ?? null,
-      critrate: value?.stats.get(CRIT_RATE)?.value ?? null,
-      er: value?.stats.get(ENERGY_RECHARGE)?.value ?? null,
+        })?.name ?? 'НР',
+      atkPercent: value?.stats.get(ATK_PERCENT)?.value ?? 4.1,
+      hpPercent: value?.stats.get(HP_PERCENT)?.value ?? 4.1,
+      defPercent: value?.stats.get(DEF_PERCENT)?.value ?? null,
+      critDmg: value?.stats.get(CRIT_DMG)?.value ?? null,
+      critRate: value?.stats.get(CRIT_RATE)?.value ?? 5.4,
+      er: value?.stats.get(ENERGY_RECHARGE)?.value ?? 4.5,
       em: value?.stats.get(ELEMENTAL_MASTERY)?.value ?? null,
     });
-  }
-
-  private toArtefact(): Artefact | null {
-    const { atk, hp, def, critdmg, critrate, er, em, setName, setPartType, mainStat } =
-      this.artifactForm.getRawValue();
-
-    const maxRolls = [
-      MAXIMUM_ROLL.ATK_PERCENT,
-      MAXIMUM_ROLL.HP_PERCENT,
-      MAXIMUM_ROLL.DEF_PERCENT,
-      MAXIMUM_ROLL.CRIT_DMG,
-      MAXIMUM_ROLL.CRIT_RATE,
-      MAXIMUM_ROLL.ENERGY_RECHARGE,
-      MAXIMUM_ROLL.ELEMENTAL_MASTERY,
-    ];
-    const inputs = [atk, hp, def, critdmg, critrate, er, em];
-    const names = [
-      ATK_PERCENT,
-      HP_PERCENT,
-      DEF_PERCENT,
-      CRIT_DMG,
-      CRIT_RATE,
-      ENERGY_RECHARGE,
-      ELEMENTAL_MASTERY,
-    ];
-
-    // basic validation similar to WinForms: no duplicate mainstat with substat present
-    for (let i = 0; i < inputs.length; i++) {
-      if (inputs[i]! > 0 && names[i] === STATS.find((stat) => stat.name === mainStat)?.name) {
-        alert('Верхний и нижний стат повторяться не могут!');
-        return null;
-      }
-    }
-
-    // convert to normalized rolls like C# constructor
-    const artefact: Artefact = {
-      atk: +(atk ?? 0 / 5).toFixed(3),
-      def: +(def ?? 0 / 6.2).toFixed(3),
-      hp: +(hp ?? 0 / 5).toFixed(3),
-      em: +(em ?? 0 / 20).toFixed(3),
-      er: +(er ?? 0 / 5.5).toFixed(3),
-      critDmg: +(critdmg ?? 0 / 6.6).toFixed(3),
-      critRate: +(critrate ?? 0 / 3.3).toFixed(3),
-      set: setName ?? '',
-      mainStat:
-        STATS.find((stat) => stat.key === STATS.find((stat) => stat.name === mainStat)?.key)
-          ?.name ?? '',
-      piece: setPartType ?? '',
-    };
-    return artefact;
   }
 
   /**
@@ -135,11 +94,7 @@ export class StatsCounter {
    * @param quality - качество выходного изображения (0-1)
    * @returns Promise с новым File объектом
    */
-  applyContrastFilter(
-    imageFile: File,
-    contrastValue: number = 1.5,
-    quality: number = 1
-  ): Promise<File> {
+  applyContrastFilter(imageFile: File, quality: number = 1): Promise<File> {
     return new Promise((resolve, reject) => {
       // Проверяем, что файл является изображением
       if (!imageFile.type.startsWith('image/')) {
@@ -222,15 +177,36 @@ export class StatsCounter {
     // }
   }
 
-  protected calculate() {
-    const artefact = this.toArtefact();
-    if (!artefact) return;
-    const rows: { name: string; stat: string; set: string }[] = [];
+  calculate() {
+    this.#checkMainStatDuplicate();
+
+    const formData = this.artifactForm.getRawValue();
+
+    const artefact: Artefact = {
+      atkPercent: +(formData.atkPercent ?? 0 / 5).toFixed(3),
+      defPercent: +(formData.defPercent ?? 0 / 6.2).toFixed(3),
+      hpPercent: +(formData.hpPercent ?? 0 / 5).toFixed(3),
+      atk: +(formData.atk ?? 0 / 16.5).toFixed(3),
+      def: +(formData.def ?? 0 / 19.5).toFixed(3),
+      hp: +(formData.hp ?? 0 / 254).toFixed(3),
+      em: +(formData.em ?? 0 / 20).toFixed(3),
+      er: +(formData.er ?? 0 / 5.5).toFixed(3),
+      critDmg: +(formData.critDmg ?? 0 / 6.6).toFixed(3),
+      critRate: +(formData.critRate ?? 0 / 3.3).toFixed(3),
+      setName: formData.setName ?? '',
+      mainStat:
+        STATS.find(
+          (stat) => stat.key === STATS.find((stat) => stat.name === formData.mainStat)?.key
+        )?.name ?? '',
+      setPartType: formData.setPartType ?? '',
+    };
+
+    const rows: Result[] = [];
     for (const c of this.dataService.characters()) {
       rows.push({
-        name: c.nameEn,
-        stat: this.check(artefact, c),
-        set: this.setFunction(c, artefact),
+        char: c.nameEn,
+        profit: this.#setProfit(artefact, c),
+        setType: this.setFunction(c, artefact),
       });
     }
     this.results.set(rows);
@@ -250,190 +226,138 @@ export class StatsCounter {
     }
     const filtered: typeof all = [];
     for (const row of all) {
-      if ((row.name + ' ' + row.stat + ' ' + row.set).toLowerCase().includes(text)) {
+      if ((row.char + ' ' + row.profit + ' ' + row.setType).toLowerCase().includes(text)) {
         filtered.push(row);
       }
     }
     this.results.set(filtered);
   }
 
-  protected colorizeStat(s: string): string {
-    if (s === 'Идеально') return 'greenyellow';
-    if (s === 'Отлично') return 'yellow';
-    if (s === 'Хорошо') return 'orange';
-    if (s === '-') return 'white';
-    if (s === 'СОВЕРШЕННО!') return 'lightskyblue';
-    if (s === 'Так себе') return 'red';
-    return 'black';
-  }
-
-  protected colorizeSet(s: string): string {
-    if (s === 'Сетник') return 'greenyellow';
-    if (s === 'Альтернатива') return 'lightblue';
-    if (s === 'Солянка') return 'orange';
-    if (s === 'Оффсетник') return 'deeppink';
-    if (s === '-') return 'white';
-    return 'black';
-  }
-
-  private setFunction(character: Character, a: Artefact): string {
+  private setFunction(character: Character, a: Artefact): string | null {
     const { setName } = this.artifactForm.getRawValue();
 
     if (!setName) return 'Введи сет';
     let error = true;
-    if (a.piece === 'Пески времени')
-      error = character.clockStats.includes(a.mainStat) ? false : true;
-    if (a.piece === 'Кубок пространства')
-      error = character.gobletStats.includes(a.mainStat) ? false : true;
-    if (a.piece === 'Корона разума')
-      error = character.crownStats.includes(a.mainStat) ? false : true;
-    if (a.piece === 'Цветок жизни' || a.piece === 'Перо смерти') error = false;
-    if (error) return '-';
+    if (a.setPartType === 'Пески времени')
+      error = a.mainStat && character.clockStats.includes(a.mainStat) ? false : true;
+    if (a.setPartType === 'Кубок пространства')
+      error = a.mainStat && character.gobletStats.includes(a.mainStat) ? false : true;
+    if (a.setPartType === 'Корона разума')
+      error = a.mainStat && character.crownStats.includes(a.mainStat) ? false : true;
+    if (a.setPartType === 'Цветок жизни' || a.setPartType === 'Перо смерти') error = false;
+    if (error) return null;
 
-    if (character.mainSets.includes(setName)) return 'Сетник';
-    if (character.altSets.includes(setName)) return 'Альтернатива';
-    if (character.subSets.includes(setName)) return 'Солянка';
+    if (
+      this.extractStatsPipe
+        .transform(character.mainSets, this.dataService.artefactSets())
+        .includes(setName)
+    )
+      return 'Сетник';
+    if (
+      this.extractStatsPipe
+        .transform(character.altSets, this.dataService.artefactSets())
+        .includes(setName)
+    )
+      return 'Альтернатива';
+    if (
+      this.extractStatsPipe
+        .transform(character.subSets, this.dataService.artefactSets())
+        .includes(setName)
+    )
+      return 'Солянка';
     return 'Оффсетник';
   }
 
-  private check(a: Artefact, c: Character): string {
-    let first = 0;
-    let second = 0;
-    let third = 0;
+  #setProfit(art: Artefact, char: Character): string | null {
+    const res = [0, 0, 0, 0];
 
-    let mainstatus = false;
-    for (const stat of c.perfectStats) {
-      if (a.mainStat === stat) {
-        mainstatus = true;
+    console.log(
+      char.nameEn,
+      this.extractStatsPipe.transform(char.perfectStats, this.dataService.stats())
+    );
+    console.log(
+      char.nameEn,
+      this.extractStatsPipe.transform(char.goodStats, this.dataService.stats())
+    );
+    console.log(
+      char.nameEn,
+      this.extractStatsPipe.transform(char.okStats, this.dataService.stats())
+    );
+
+    for (const stat of char.perfectStats) {
+      if (
+        art.mainStat === stat ||
+        art.setPartType === 'Цветок жизни' ||
+        art.setPartType === 'Перо смерти'
+      ) {
+        res[0] = 1;
         break;
       }
     }
 
-    if (a.piece === 'Пески времени' && !c.clockStats.includes(a.mainStat)) return '-';
-    if (a.piece === 'Кубок пространства' && !c.gobletStats.includes(a.mainStat)) return '-';
-    if (a.piece === 'Корона разума' && !c.crownStats.includes(a.mainStat)) return '-';
+    const filledStats = [
+      art.critDmg ? CRIT_DMG : null,
+      art.critRate ? CRIT_RATE : null,
+      art.atkPercent ? ATK_PERCENT : null,
+      art.hpPercent ? HP_PERCENT : null,
+      art.defPercent ? DEF_PERCENT : null,
+      art.er ? ENERGY_RECHARGE : null,
+      art.em ? ELEMENTAL_MASTERY : null,
+    ].filter(Boolean);
 
-    for (const stat of c.perfectStats) {
-      if (stat === CRIT_DMG) first += a.critDmg;
-      else if (stat === CRIT_RATE) first += a.critRate;
-      else if (stat === ATK_PERCENT) first += a.atk;
-      else if (stat === HP_PERCENT) first += a.hp;
-      else if (stat === DEF_PERCENT) first += a.def;
-      else if (stat === ENERGY_RECHARGE) first += a.er;
-      else if (stat === ELEMENTAL_MASTERY) first += a.em;
-    }
-    for (const stat of c.goodStats) {
-      if (stat === CRIT_DMG) second += a.critDmg;
-      else if (stat === CRIT_RATE) second += a.critRate;
-      else if (stat === ATK_PERCENT) second += a.atk;
-      else if (stat === HP_PERCENT) second += a.hp;
-      else if (stat === DEF_PERCENT) second += a.def;
-      else if (stat === ENERGY_RECHARGE) second += a.er;
-      else if (stat === ELEMENTAL_MASTERY) second += a.em;
-    }
-    for (const stat of c.okStats) {
-      if (stat === CRIT_DMG) third += a.critDmg;
-      else if (stat === CRIT_RATE) third += a.critRate;
-      else if (stat === ATK_PERCENT) third += a.atk;
-      else if (stat === HP_PERCENT) third += a.hp;
-      else if (stat === DEF_PERCENT) third += a.def;
-      else if (stat === ENERGY_RECHARGE) third += a.er;
-      else if (stat === ELEMENTAL_MASTERY) third += a.em;
+    for (const stat of this.extractStatsPipe.transform(
+      char.perfectStats,
+      this.dataService.stats()
+    )) {
+      res[1] = res[1] + +filledStats.includes(stat);
     }
 
-    second += third / 2;
-
-    if (first - Math.trunc(first) > 0.8) first = Math.trunc(first) + 1;
-    else if (first - Math.trunc(first) > 0.4) {
-      first = Math.trunc(first);
-      second += 1;
-    } else {
-      second += (first - Math.trunc(first)) / 2;
-      first = Math.trunc(first);
+    for (const stat of this.extractStatsPipe.transform(char.goodStats, this.dataService.stats())) {
+      res[2] = res[2] + +filledStats.includes(stat);
     }
 
-    if (second - Math.trunc(second) > 0.8) second = Math.trunc(second) + 1;
-    else second = Math.trunc(second);
+    for (const stat of this.extractStatsPipe.transform(char.okStats, this.dataService.stats())) {
+      res[3] = res[3] + +filledStats.includes(stat);
+    }
 
-    if (a.piece === 'Цветок жизни' || a.piece === 'Перо смерти') {
-      if (first < 3) return '-';
-      else if (first === 3) return second >= 2 ? 'Так себе' : '-';
-      else if (first === 4) return second >= 2 ? 'Хорошо' : 'Так себе';
-      else if (first === 5) return second >= 2 ? 'Отлично' : 'Хорошо';
-      else if (first === 6) return second >= 2 ? 'Идеально' : 'Отлично';
-      else if (first === 7) return second >= 2 ? 'СОВЕРШЕННО!' : 'Идеально';
-      else return 'СОВЕРШЕННО!';
-    } else if (a.piece === 'Пески времени') {
-      if (mainstatus) {
-        if (second / 2 >= 1) {
-          first += second / 2 - (second / 2 - Math.trunc(second / 2));
-          second = second - Math.trunc(second / 2) * 2;
-        }
-        if (first < 3) return '-';
-        else if (first === 3) return second >= 1 ? 'Так себе' : '-';
-        else if (first === 4) return second >= 1 ? 'Хорошо' : 'Так себе';
-        else if (first === 5) return second >= 1 ? 'Отлично' : 'Хорошо';
-        else if (first === 6) return second >= 1 ? 'Идеально' : 'Отлично';
-        else if (first === 7) return second >= 1 ? 'СОВЕРШЕННО!' : 'Идеально';
-        else return 'СОВЕРШЕННО!';
-      } else {
-        if (first < 2) return '-';
-        else if (first === 2) return second >= 3 ? 'Так себе' : '-';
-        else if (first === 3) return second >= 3 ? 'Хорошо' : second >= 1 ? 'Так себе' : '-';
-        else if (first === 4) return second >= 3 ? 'Отлично' : second >= 1 ? 'Хорошо' : 'Так себе';
-        else if (first === 5) return second >= 3 ? 'Идеально' : second >= 1 ? 'Отлично' : 'Хорошо';
-        else if (first === 6)
-          return second >= 3 ? 'СОВЕРШЕННО!' : second >= 1 ? 'Идеально' : 'Отлично';
-        else if (first === 7) return second >= 1 ? 'СОВЕРШЕННО!' : 'Идеально';
-        else return 'СОВЕРШЕННО!';
-      }
-    } else if (a.piece === 'Кубок пространства') {
-      if (mainstatus) {
-        if (second / 2 >= 1) {
-          first += second / 2 - (second / 2 - Math.trunc(second / 2));
-          second = second - Math.trunc(second / 2) * 2;
-        }
-        if (first < 3) return '-';
-        else if (first === 3) return 'Так себе';
-        else if (first === 4) return 'Хорошо';
-        else if (first === 5) return 'Отлично';
-        else if (first === 6) return 'Идеально';
-        else if (first === 7) return 'СОВЕРШЕННО!';
-        else return 'СОВЕРШЕННО!';
-      } else {
-        if (first < 2) return '-';
-        else if (first === 2) return second >= 2 ? 'Так себе' : '-';
-        else if (first === 3) return second >= 2 ? 'Хорошо' : 'Так себе';
-        else if (first === 4) return second >= 2 ? 'Отлично' : 'Хорошо';
-        else if (first === 5) return second >= 2 ? 'Идеально' : 'Отлично';
-        else if (first === 6) return second >= 2 ? 'СОВЕРШЕННО!' : 'Идеально';
-        else return 'СОВЕРШЕННО!';
-      }
-    } else if (a.piece === 'Корона разума') {
-      if (mainstatus) {
-        if (second / 2 >= 1) {
-          first += second / 2 - (second / 2 - Math.trunc(second / 2));
-          second = second - Math.trunc(second / 2) * 2;
-        }
-        if (first < 2) return '-';
-        else if (first === 2) return second >= 1 ? 'Так себе' : '-';
-        else if (first === 3) return second >= 1 ? 'Хорошо' : 'Так себе';
-        else if (first === 4) return second >= 1 ? 'Отлично' : 'Хорошо';
-        else if (first === 5) return second >= 1 ? 'Идеально' : 'Отлично';
-        else if (first === 6) return second >= 1 ? 'СОВЕРШЕННО!' : 'Идеально';
-        else return 'СОВЕРШЕННО!';
-      } else {
-        if (first < 1) return '-';
-        else if (first === 1) return second >= 3 ? 'Так себе' : '-';
-        else if (first === 2) return second >= 3 ? 'Хорошо' : second >= 1 ? 'Так себе' : '-';
-        else if (first === 3) return second >= 3 ? 'Отлично' : second >= 1 ? 'Хорошо' : 'Так себе';
-        else if (first === 4) return second >= 3 ? 'Идеально' : second >= 1 ? 'Отлично' : 'Хорошо';
-        else if (first === 5)
-          return second >= 3 ? 'СОВЕРШЕННО!' : second >= 1 ? 'Идеально' : 'Отлично';
-        else if (first === 6) return second >= 1 ? 'СОВЕРШЕННО!' : 'Идеально';
-        else return 'СОВЕРШЕННО!';
+    const count = res[0] * 1000 + res[1] * 100 + res[2] * 10 + res[3];
+
+    const perfectScore =
+      1000 +
+      100 * char.perfectStats.length +
+      10 * Math.min(4 - char.perfectStats.length, char.goodStats.length) +
+      1 *
+        Math.max(
+          0,
+          Math.min(4 - char.goodStats.length - char.perfectStats.length, char.okStats.length)
+        );
+
+    return count == perfectScore
+      ? 'Совершенно'
+      : count > perfectScore - 10
+      ? 'Отлично'
+      : count > perfectScore - 110
+      ? 'Хорошо'
+      : count > perfectScore - 220
+      ? 'Приемлемо'
+      : null;
+  }
+
+  #checkMainStatDuplicate(): undefined | never {
+    const { atkPercent, hpPercent, defPercent, atk, def, hp, critDmg, critRate, er, em, mainStat } =
+      this.artifactForm.getRawValue();
+
+    const inputs = [atkPercent, hpPercent, defPercent, atk, def, hp, critDmg, critRate, er, em];
+
+    for (let i = 0; i < inputs.length; i++) {
+      if (
+        inputs[i]! > 0 &&
+        this.dataService.repeatableStats()[i].nameRu ===
+          STATS.find((stat) => stat.name === mainStat)?.name
+      ) {
+        alert('Верхний и нижний стат повторяться не могут!');
+        throw Error('Верхний и нижний стат повторяться не могут!');
       }
     }
-    return 'Выбери кусок!';
   }
 }

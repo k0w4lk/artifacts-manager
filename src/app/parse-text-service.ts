@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { createWorker } from 'tesseract.js';
 import { DataService } from './core/services/data-service';
-import { ALL_STATS, ArtefactSetPart, STATS } from './models/stat-names';
+import { ALL_STATS, ArtefactSetPart, STATS } from './core/utils/stat-names';
 
 export interface Artifact {
   setName: string;

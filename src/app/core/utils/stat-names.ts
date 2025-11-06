@@ -1,6 +1,6 @@
-export const ATK_PERCENT = 'Сила атаки';
-export const HP_PERCENT = 'НР';
-export const DEF_PERCENT = 'Защита';
+export const ATK_PERCENT = 'Сила атаки %';
+export const HP_PERCENT = 'НР %';
+export const DEF_PERCENT = 'Защита %';
 export const ENERGY_RECHARGE = 'Восст. энергии';
 export const ELEMENTAL_MASTERY = 'Мастерство стихий';
 export const CRIT_DMG = 'Крит. урон';
@@ -30,7 +30,7 @@ export const STATS = [
   },
   {
     key: 'hpPercent',
-    name: 'НР',
+    name: 'НР %',
   },
   {
     key: 'energyRecharge',

@@ -1,7 +1,7 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { collection, collectionData, Firestore, getDocs } from '@angular/fire/firestore';
 import { ArtifactSet } from '../utils/set-interface';
-import { Character } from '../../models/types';
+import { Character } from '../utils/types';
 import { SetPart } from '../utils/set-part-interface';
 import { Stat } from '../utils/stat-interface';
 import { from } from 'rxjs';
@@ -18,22 +18,24 @@ export class DataService {
   readonly #statsCollection = collection(this.#firestore, 'stats');
 
   readonly #chars$ = collectionData(this.#charsCollection);
-  readonly #sets$ = collectionData(this.#setsCollection);
   readonly #setParts$ = collectionData(this.#setPartsCollection);
-  readonly #stats$ = collectionData(this.#statsCollection);
 
   readonly artefactSets = signal<ArtifactSet[]>([]);
   readonly characters = signal<Character[]>([]);
   readonly setParts = signal<SetPart[]>([]);
   readonly stats = signal<Stat[]>([]);
 
+  readonly repeatableStats = computed(() => this.stats().filter((stat) => stat.repeatable));
+
   constructor() {
     this.#requestAllData();
   }
 
   #requestArtifacts(): void {
-    this.#sets$.subscribe((sets) => {
-      this.artefactSets.set(sets as ArtifactSet[]);
+    from(getDocs(this.#setsCollection)).subscribe((snapshot) => {
+      const artefactSets = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
+      this.artefactSets.set(artefactSets as ArtifactSet[]);
     });
   }
 

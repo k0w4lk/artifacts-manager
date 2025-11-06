@@ -6,6 +6,13 @@
     <td mat-cell *matCellDef="let character">{{ character.nameEn }}</td>
   </ng-container>
 
+  <ng-container matColumnDef="perfectStats">
+    <th mat-header-cell *matHeaderCellDef>Perfect stats</th>
+    <td mat-cell *matCellDef="let character">
+      {{ character.perfectStats | extractStats : dataService.stats() | json }}
+    </td>
+  </ng-container>
+
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
   <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 </table>

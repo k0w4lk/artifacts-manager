@@ -1,11 +1,10 @@
 import { JsonPipe } from '@angular/common';
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, ElementRef, inject, viewChild } from '@angular/core';
 import { ParseTextService } from '../parse-text-service';
 
 @Component({
   selector: 'app-camera',
-  imports: [RouterOutlet, JsonPipe],
+  imports: [JsonPipe],
   templateUrl: './camera.html',
   styleUrl: './camera.css',
 })

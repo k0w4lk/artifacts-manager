@@ -1,9 +1,0 @@
-export const AVERAGE_STATS = {
-  CRIT_DMG: 6.6,
-  CRIT_RATE: 3.3,
-  ELEMENTAL_MASTERY: 20,
-  ATK_PERCENT: 5,
-  ENERGY_RECHARGE: 5.5,
-  HP_PERCENT: 5,
-  DEF_PERCENT: 6.2,
-} as const;

@@ -8,7 +8,7 @@
         <select formControlName="setName">
           <option value="">—</option>
           @for (s of dataService.artefactSets(); track s) {
-          <option [value]="s">{{ s.nameRu }}</option>
+          <option [value]="s.nameRu">{{ s.nameRu }}</option>
           }
         </select>
       </div>
@@ -17,7 +17,7 @@
         <select formControlName="setPartType">
           <option value="">—</option>
           @for (p of dataService.setParts(); track p) {
-          <option [value]="p.nameEn">{{ p.nameEn }}</option>
+          <option [value]="p.nameRu">{{ p.nameRu }}</option>
           }
         </select>
       </div>
@@ -38,23 +38,23 @@
     <fieldset>
       <div class="field">
         <label>ATK %</label>
-        <input type="number" step="0.1" [max]="35" formControlName="atk" />
+        <input type="number" step="0.1" [max]="35" formControlName="atkPercent" />
       </div>
       <div class="field">
         <label>HP %</label>
-        <input type="number" step="0.1" [max]="35" formControlName="hp" />
+        <input type="number" step="0.1" [max]="35" formControlName="hpPercent" />
       </div>
       <div class="field">
         <label>DEF %</label>
-        <input type="number" step="0.1" [max]="43.7" formControlName="def" />
+        <input type="number" step="0.1" [max]="43.7" formControlName="defPercent" />
       </div>
       <div class="field">
         <label>Крит. урон %</label>
-        <input type="number" step="0.1" [max]="46.6" formControlName="critdmg" />
+        <input type="number" step="0.1" [max]="46.6" formControlName="critDmg" />
       </div>
       <div class="field">
         <label>Шанс крита %</label>
-        <input type="number" step="0.1" [max]="23.3" formControlName="critrate" />
+        <input type="number" step="0.1" [max]="23.3" formControlName="critRate" />
       </div>
       <div class="field">
         <label>Восст. энергии %</label>
@@ -93,22 +93,5 @@
     />
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 34%">Персонаж</th>
-        <th style="width: 33%">Статы</th>
-        <th style="width: 33%">Сет</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of results(); track row.name) {
-      <tr>
-        <td>{{ row.name }}</td>
-        <td [style.color]="colorizeStat(row.stat)">{{ row.stat }}</td>
-        <td [style.color]="colorizeSet(row.set)">{{ row.set }}</td>
-      </tr>
-      }
-    </tbody>
-  </table>
+  <app-results [results]="displayedResults()" />
 </div>
