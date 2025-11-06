@@ -128,11 +128,3 @@ export enum ArtefactSetPart {
   CUP_OF_SPACE = 'Кубок пространства',
   CORONA_OF_MIND = 'Корона разума',
 }
-
-export const PART_MAIN_STATS_MAP = new Map<ArtefactSetPart, string[]>([
-  [ArtefactSetPart.FLOWER_OF_LIFE, [HP_PERCENT]],
-  [ArtefactSetPart.FEATHER_OF_DEATH, [ATK_PERCENT]],
-  [ArtefactSetPart.SANDS_OF_TIME, CLOCK_STATS],
-  [ArtefactSetPart.CUP_OF_SPACE, GOBLET_STATS],
-  [ArtefactSetPart.CORONA_OF_MIND, CROWN_STATS],
-]);

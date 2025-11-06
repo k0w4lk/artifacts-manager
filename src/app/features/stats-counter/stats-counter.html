@@ -1,1 +1,114 @@
-<p>stats-counter works!</p>
+<input type="file" (change)="onFileChange($event)" />
+
+<div class="card">
+  <form [formGroup]="artifactForm" class="form">
+    <fieldset>
+      <div class="field">
+        <label>Сет</label>
+        <select formControlName="setName">
+          <option value="">—</option>
+          @for (s of dataService.artefactSets(); track s) {
+          <option [value]="s">{{ s.nameRu }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Тип артефакта</label>
+        <select formControlName="setPartType">
+          <option value="">—</option>
+          @for (p of dataService.setParts(); track p) {
+          <option [value]="p.nameEn">{{ p.nameEn }}</option>
+          }
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <div class="field">
+        <label>Главная характеристика</label>
+        <select formControlName="mainStat">
+          <option value="">—</option>
+          @for(mainStat of partMainStats(); track mainStat) {
+          <option [value]="mainStat.nameEn">{{ mainStat.nameEn }}</option>
+          }
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <div class="field">
+        <label>ATK %</label>
+        <input type="number" step="0.1" [max]="35" formControlName="atk" />
+      </div>
+      <div class="field">
+        <label>HP %</label>
+        <input type="number" step="0.1" [max]="35" formControlName="hp" />
+      </div>
+      <div class="field">
+        <label>DEF %</label>
+        <input type="number" step="0.1" [max]="43.7" formControlName="def" />
+      </div>
+      <div class="field">
+        <label>Крит. урон %</label>
+        <input type="number" step="0.1" [max]="46.6" formControlName="critdmg" />
+      </div>
+      <div class="field">
+        <label>Шанс крита %</label>
+        <input type="number" step="0.1" [max]="23.3" formControlName="critrate" />
+      </div>
+      <div class="field">
+        <label>Восст. энергии %</label>
+        <input type="number" step="0.1" [max]="38.9" formControlName="er" />
+      </div>
+      <div class="field">
+        <label>Мастерство стихий</label>
+        <input type="number" step="1" [max]="140" formControlName="em" />
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button class="btn btn-primary" (click)="calculate()">Рассчитать</button>
+      <button class="btn btn-ghost" (click)="clear()">Очистить</button>
+    </div>
+  </form>
+
+  <div class="legend">
+    <span class="chip"><span class="dot" style="background: greenyellow"></span>Идеально</span>
+    <span class="chip"><span class="dot" style="background: yellow"></span>Отлично</span>
+    <span class="chip"><span class="dot" style="background: orange"></span>Хорошо</span>
+    <span class="chip"><span class="dot" style="background: lightskyblue"></span>СОВЕРШЕННО!</span>
+    <span class="chip"><span class="dot" style="background: red"></span>Так себе</span>
+    <span class="chip"><span class="dot" style="background: deeppink"></span>Оффсетник</span>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="field">
+    <label>Поиск</label>
+    <input
+      type="text"
+      placeholder="Имя, оценка или сет"
+      [formControl]="searchText"
+      (keyup.enter)="search()"
+    />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 34%">Персонаж</th>
+        <th style="width: 33%">Статы</th>
+        <th style="width: 33%">Сет</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of results(); track row.name) {
+      <tr>
+        <td>{{ row.name }}</td>
+        <td [style.color]="colorizeStat(row.stat)">{{ row.stat }}</td>
+        <td [style.color]="colorizeSet(row.set)">{{ row.set }}</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>

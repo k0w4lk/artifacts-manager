@@ -1,5 +1,5 @@
 export type Character = {
-  name: string;
+  nameEn: string;
   mainSets: string[];
   altSets: string[];
   subSets: string[];

@@ -1,3 +1,5 @@
+<h2 mat-dialog-title>Add Character</h2>
+
 <mat-dialog-content>
   <form class="form" [formGroup]="form">
     <mat-form-field>
@@ -9,7 +11,7 @@
       <mat-label>Main sets</mat-label>
       <mat-select multiple formControlName="mainSets">
         @for(set of sets(); track set.id) {
-        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        <mat-option [value]="set.id">{{ set.nameRu }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -18,7 +20,7 @@
       <mat-label>Alt sets</mat-label>
       <mat-select multiple formControlName="altSets">
         @for(set of sets(); track set.id) {
-        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        <mat-option [value]="set.id">{{ set.nameRu }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -27,15 +29,17 @@
       <mat-label>Half-bonus sets</mat-label>
       <mat-select multiple formControlName="subSets">
         @for(set of sets(); track set.id) {
-        <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
+        <mat-option [value]="set.id">{{ set.nameRu }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
 
+    @let stats = dataService.stats();
+
     <mat-form-field>
       <mat-label>Perfect stats</mat-label>
       <mat-select multiple formControlName="perfectStats">
-        @for(set of stats(); track set.id) {
+        @for(set of stats; track set.id) {
         <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
         }
       </mat-select>
@@ -44,7 +48,7 @@
     <mat-form-field>
       <mat-label>Good stats</mat-label>
       <mat-select multiple formControlName="goodStats">
-        @for(set of stats(); track set.id) {
+        @for(set of stats; track set.id) {
         <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
         }
       </mat-select>
@@ -53,7 +57,7 @@
     <mat-form-field>
       <mat-label>OK stats</mat-label>
       <mat-select multiple formControlName="okStats">
-        @for(set of stats(); track set.id) {
+        @for(set of stats; track set.id) {
         <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
         }
       </mat-select>
@@ -62,7 +66,7 @@
     <mat-form-field>
       <mat-label>Sands stats</mat-label>
       <mat-select multiple formControlName="sandsStats">
-        @for(set of stats(); track set.id) {
+        @for(set of stats; track set.id) {
         <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
         }
       </mat-select>
@@ -71,7 +75,7 @@
     <mat-form-field>
       <mat-label>Goblet stats</mat-label>
       <mat-select multiple formControlName="gobletStats">
-        @for(set of stats(); track set.id) {
+        @for(set of stats; track set.id) {
         <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
         }
       </mat-select>
@@ -80,7 +84,7 @@
     <mat-form-field>
       <mat-label>Crown stats</mat-label>
       <mat-select multiple formControlName="crownStats">
-        @for(set of stats(); track set.id) {
+        @for(set of stats; track set.id) {
         <mat-option [value]="set.id">{{ set.nameEn }}</mat-option>
         }
       </mat-select>

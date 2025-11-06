@@ -1,11 +1,10 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { AddCharacter } from '../add-character/add-character';
-import { MatTableModule } from '@angular/material/table';
 import { DataSource } from '@angular/cdk/collections';
+import { Component, effect, inject } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
 import { Observable, ReplaySubject } from 'rxjs';
-import { collection, collectionData, Firestore } from '@angular/fire/firestore';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AddCharacter } from '../add-character/add-character';
+import { DataService } from '../../../../core/services/data-service';
 
 class CharsDataSource extends DataSource<any> {
   private _dataStream = new ReplaySubject<any[]>();
@@ -32,28 +31,20 @@ class CharsDataSource extends DataSource<any> {
   templateUrl: './characters.html',
   styleUrl: './characters.css',
 })
-export class Characters implements OnInit {
-  readonly #destroyRef = inject(DestroyRef);
-  readonly #firestore = inject(Firestore);
+export class Characters {
+  readonly #dataService = inject(DataService);
   readonly #matDialog = inject(MatDialog);
-
-  readonly #charsCollection = collection(this.#firestore, 'characters');
-  readonly chars$ = collectionData(this.#charsCollection);
 
   displayedColumns: string[] = ['name'];
   dataSource = new CharsDataSource([]);
 
-  ngOnInit(): void {
-    this.#requestCharacters();
+  constructor() {
+    effect(() => {
+      this.dataSource.setData(this.#dataService.characters());
+    });
   }
 
   addChar(): void {
     this.#matDialog.open(AddCharacter);
-  }
-
-  #requestCharacters(): void {
-    this.chars$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((chars) => {
-      this.dataSource.setData(chars);
-    });
   }
 }

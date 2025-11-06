@@ -8,11 +8,14 @@ import {
   MatDialogContent,
   MatDialogTitle,
   MatDialogClose,
+  MatDialogRef,
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { combineLatest, from } from 'rxjs';
+import { ArtifactSet } from '../../../../core/utils/set-interface';
+import { DataService } from '../../../../core/services/data-service';
 
 @Component({
   selector: 'app-add-character',
@@ -32,17 +35,18 @@ import { combineLatest, from } from 'rxjs';
   styleUrl: './add-character.css',
 })
 export class AddCharacter implements OnInit {
+  readonly dataService = inject(DataService);
+
   readonly #destroyRef = inject(DestroyRef);
   readonly #firestore = inject(Firestore);
+  readonly #matDialogRef = inject<MatDialogRef<AddCharacter>>(MatDialogRef);
 
-  readonly sets = signal<any>([]);
-  readonly stats = signal<any>([]);
+  readonly sets = signal<ArtifactSet[]>([]);
 
   itemCollection = collection(this.#firestore, 'characters');
   item$ = collectionData<any>(this.itemCollection);
 
   readonly #setsCollection = collection(this.#firestore, 'sets');
-  readonly #statsCollection = collection(this.#firestore, 'stats');
 
   readonly form = new FormGroup({
     nameEn: new FormControl<string>(''),
@@ -58,15 +62,11 @@ export class AddCharacter implements OnInit {
   });
 
   ngOnInit(): void {
-    this.item$.subscribe(console.log);
     this.#requestSets();
-    this.#requestStats();
   }
 
   add(): void {
-    console.log(this.form.value);
-
-    addDoc(this.itemCollection, this.form.value);
+    addDoc(this.itemCollection, this.form.value).then(() => this.#matDialogRef.close());
   }
 
   #requestSets(): void {
@@ -75,17 +75,7 @@ export class AddCharacter implements OnInit {
       .subscribe((snapshot) => {
         const sets = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
-        this.sets.set(sets);
-      });
-  }
-
-  #requestStats(): void {
-    from(getDocs(this.#statsCollection))
-      .pipe(takeUntilDestroyed(this.#destroyRef))
-      .subscribe((snapshot) => {
-        const stats = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
-        this.stats.set(stats);
+        this.sets.set(sets as ArtifactSet[]);
       });
   }
 }

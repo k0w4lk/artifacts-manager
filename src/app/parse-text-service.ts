@@ -1,7 +1,7 @@
-import { Injectable, signal } from '@angular/core';
-import { ALL_ARTEFACTS } from './models/art-names';
-import { ALL_STATS, ArtefactSetPart, PART_MAIN_STATS_MAP, STATS } from './models/stat-names';
+import { inject, Injectable, signal } from '@angular/core';
 import { createWorker } from 'tesseract.js';
+import { DataService } from './core/services/data-service';
+import { ALL_STATS, ArtefactSetPart, STATS } from './models/stat-names';
 
 export interface Artifact {
   setName: string;
@@ -19,6 +19,8 @@ export interface Stat {
   providedIn: 'root',
 })
 export class ParseTextService {
+  readonly artefactService = inject(DataService);
+
   res = signal<Artifact | null>(null);
 
   OCRSpace(base64Image: string) {
@@ -68,7 +70,8 @@ export class ParseTextService {
   }
 
   #parse(text: string) {
-    const setName = ALL_ARTEFACTS.find((art) => text.includes(art)) || '';
+    const setName =
+      this.artefactService.artefactSets().find((art) => text.includes(art.nameRu))?.nameRu || '';
     const setPart = Object.values(ArtefactSetPart).find((part) => text.includes(part)) || '';
     const mainStatRegex = new RegExp(`(${ALL_STATS?.join('|')}).*\\n*(\\d+[,\\s]*\\d*)(%*)`, 'm');
     const statRegex = new RegExp(
