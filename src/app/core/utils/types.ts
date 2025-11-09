@@ -1,3 +1,5 @@
+import { ArtifactSet } from './set-interface';
+
 export type Character = {
   nameEn: string;
   mainSets: string[];
@@ -22,7 +24,7 @@ export type Artefact = {
   er: number | null;
   critDmg: number | null;
   critRate: number | null;
-  setName: string | null;
+  set: ArtifactSet | null;
   mainStat: string | null;
   setPartType: string | null;
 };

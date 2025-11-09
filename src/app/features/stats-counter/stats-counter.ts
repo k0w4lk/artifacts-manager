@@ -17,10 +17,28 @@ import { Artefact, Character } from '../../core/utils/types';
 import { Artifact, ParseTextService } from '../../parse-text-service';
 import { ExtractStatsPipe } from '../../ui/pipes/extract-stats-pipe';
 import { Results } from '../results/results';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatButton, MatButtonModule } from '@angular/material/button';
+import { MatFooterCell } from '@angular/material/table';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { ArtifactSet } from '../../core/utils/set-interface';
+import { map, Observable, startWith } from 'rxjs';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-stats-counter',
-  imports: [ReactiveFormsModule, Results],
+  imports: [
+    AsyncPipe,
+    ReactiveFormsModule,
+    Results,
+    MatAutocompleteModule,
+    MatButtonModule,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    MatFooterCell,
+  ],
   templateUrl: './stats-counter.html',
   styleUrl: './stats-counter.css',
 })
@@ -31,22 +49,39 @@ export class StatsCounter {
   readonly extractStatsPipe = new ExtractStatsPipe();
 
   readonly artifactForm = new FormGroup({
-    setName: new FormControl<string | null>(null),
+    set: new FormControl<ArtifactSet | null>(null),
     setPartType: new FormControl<string | null>(null),
     mainStat: new FormControl<string | null>(null),
-    atkPercent: new FormControl<number | null>(5.4),
-    hpPercent: new FormControl<number | null>(4.1),
+    atkPercent: new FormControl<number | null>(null),
+    hpPercent: new FormControl<number | null>(null),
     defPercent: new FormControl<number | null>(null),
     atk: new FormControl<number | null>(null),
     hp: new FormControl<number | null>(null),
     def: new FormControl<number | null>(null),
-    er: new FormControl<number | null>(4.5),
+    er: new FormControl<number | null>(null),
     em: new FormControl<number | null>(null),
     critDmg: new FormControl<number | null>(null),
-    critRate: new FormControl<number | null>(2.7),
+    critRate: new FormControl<number | null>(null),
   });
 
   readonly #currentSetPart = toSignal(this.artifactForm.controls.setPartType.valueChanges);
+
+  readonly filteredSets: Observable<ArtifactSet[]> =
+    this.artifactForm.controls.set.valueChanges.pipe(
+      startWith(''),
+      map((value) => {
+        const name = typeof value === 'string' ? value : '';
+        return name ? this._filter(name as string) : this.dataService.artefactSets().slice();
+      })
+    );
+
+  _filter(name: string): ArtifactSet[] {
+    const filterValue = name.toLowerCase();
+
+    return this.dataService
+      .artefactSets()
+      .filter((art) => art.nameRu.toLowerCase().includes(filterValue));
+  }
 
   readonly partMainStats = computed(() => {
     const mainStatsIds = this.dataService
@@ -69,20 +104,24 @@ export class StatsCounter {
     });
   }
 
+  displayFn(art: ArtifactSet): string {
+    return art && art.nameRu ? art.nameRu : '';
+  }
+
   protected onPieceChange(value: Artifact | null) {
     this.artifactForm.patchValue({
-      setName: value?.setName,
-      setPartType: value?.setPartType ?? 'Цветок жизни',
+      set: null,
+      setPartType: value?.setPartType ?? null,
       mainStat:
         STATS.find((stat) => {
           return stat.key === Array.from(value?.stats?.entries() || [])?.[0]?.[1]?.key;
         })?.name ?? 'НР',
-      atkPercent: value?.stats.get(ATK_PERCENT)?.value ?? 4.1,
-      hpPercent: value?.stats.get(HP_PERCENT)?.value ?? 4.1,
+      atkPercent: value?.stats.get(ATK_PERCENT)?.value ?? null,
+      hpPercent: value?.stats.get(HP_PERCENT)?.value ?? null,
       defPercent: value?.stats.get(DEF_PERCENT)?.value ?? null,
       critDmg: value?.stats.get(CRIT_DMG)?.value ?? null,
-      critRate: value?.stats.get(CRIT_RATE)?.value ?? 5.4,
-      er: value?.stats.get(ENERGY_RECHARGE)?.value ?? 4.5,
+      critRate: value?.stats.get(CRIT_RATE)?.value ?? null,
+      er: value?.stats.get(ENERGY_RECHARGE)?.value ?? null,
       em: value?.stats.get(ELEMENTAL_MASTERY)?.value ?? null,
     });
   }
@@ -182,6 +221,8 @@ export class StatsCounter {
 
     const formData = this.artifactForm.getRawValue();
 
+    console.log(formData);
+
     const artefact: Artefact = {
       atkPercent: +(formData.atkPercent ?? 0 / 5).toFixed(3),
       defPercent: +(formData.defPercent ?? 0 / 6.2).toFixed(3),
@@ -193,7 +234,7 @@ export class StatsCounter {
       er: +(formData.er ?? 0 / 5.5).toFixed(3),
       critDmg: +(formData.critDmg ?? 0 / 6.6).toFixed(3),
       critRate: +(formData.critRate ?? 0 / 3.3).toFixed(3),
-      setName: formData.setName ?? '',
+      set: formData.set ?? null,
       mainStat:
         STATS.find(
           (stat) => stat.key === STATS.find((stat) => stat.name === formData.mainStat)?.key
@@ -234,9 +275,9 @@ export class StatsCounter {
   }
 
   private setFunction(character: Character, a: Artefact): string | null {
-    const { setName } = this.artifactForm.getRawValue();
+    const { set } = this.artifactForm.getRawValue();
 
-    if (!setName) return 'Введи сет';
+    if (!set) return 'Введи сет';
     let error = true;
     if (a.setPartType === 'Пески времени')
       error = a.mainStat && character.clockStats.includes(a.mainStat) ? false : true;
@@ -250,19 +291,19 @@ export class StatsCounter {
     if (
       this.extractStatsPipe
         .transform(character.mainSets, this.dataService.artefactSets())
-        .includes(setName)
+        .includes(set.nameRu)
     )
       return 'Сетник';
     if (
       this.extractStatsPipe
         .transform(character.altSets, this.dataService.artefactSets())
-        .includes(setName)
+        .includes(set.nameRu)
     )
       return 'Альтернатива';
     if (
       this.extractStatsPipe
         .transform(character.subSets, this.dataService.artefactSets())
-        .includes(setName)
+        .includes(set.nameRu)
     )
       return 'Солянка';
     return 'Оффсетник';
@@ -344,10 +385,10 @@ export class StatsCounter {
   }
 
   #checkMainStatDuplicate(): undefined | never {
-    const { atkPercent, hpPercent, defPercent, atk, def, hp, critDmg, critRate, er, em, mainStat } =
+    const { atkPercent, hpPercent, defPercent, atk, hp, critDmg, critRate, er, em, mainStat } =
       this.artifactForm.getRawValue();
 
-    const inputs = [atkPercent, hpPercent, defPercent, atk, def, hp, critDmg, critRate, er, em];
+    const inputs = [atkPercent, hpPercent, defPercent, atk, hp, critDmg, critRate, er, em];
 
     for (let i = 0; i < inputs.length; i++) {
       if (
