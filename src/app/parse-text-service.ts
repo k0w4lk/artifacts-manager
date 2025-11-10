@@ -88,11 +88,13 @@ export class ParseTextService {
     const stats = text.match(statRegex)?.slice(-4);
 
     const statsMap = new Map<string, Stat>();
-    statsMap.set(mainStat![1], {
-      key: STATS.find((stat) => stat.name === mainStat![1])?.key as keyof typeof STATS,
-      value: +mainStat![2].replace(',', '.'),
-      percent: mainStat?.[3] === '%',
-    });
+    if (mainStat) {
+      statsMap.set(mainStat[1], {
+        key: STATS.find((stat) => stat.name === mainStat![1])?.key as keyof typeof STATS,
+        value: +mainStat![2].replace(',', '.'),
+        percent: mainStat?.[3] === '%',
+      });
+    }
     stats?.forEach((stat: string) => {
       const statIndex = stat.split('').findIndex((char) => /[0-9]/.test(char));
       const statName = stat.substring(0, statIndex).replace('+', '').trim();

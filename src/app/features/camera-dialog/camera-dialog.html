@@ -1,8 +1,10 @@
 <div class="camera-focus-area">
-  <video #video class="video" (canplay)="captureFrames()">Video stream not available.</video>
+  <video #video class="video" [class.hidden]="photoTaken()" (canplay)="captureFrames()">
+    Video stream not available.
+  </video>
 </div>
 
-<canvas #canvas class="canvas"></canvas>
+<canvas #canvas class="canvas" [class.hidden]="!photoTaken()"></canvas>
 
 <pre>{{ parseTextService.res() | json }}</pre>
 

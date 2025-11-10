@@ -11,7 +11,6 @@
 }
 
 .canvas {
-  display: none;
 }
 
 .camera-focus-area {
@@ -29,4 +28,8 @@
   top: 50%;
   translate: -50% -50%;
   height: 95%;
+}
+
+.hidden {
+  display: none;
 }

@@ -1,4 +1,12 @@
-import { AfterViewInit, Component, ElementRef, inject, OnInit, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ParseTextService } from '../../parse-text-service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { JsonPipe } from '@angular/common';
@@ -20,6 +28,8 @@ export class CameraDialog implements AfterViewInit {
   height = 0; // This will be computed based on the input stream
   streaming = false;
 
+  readonly photoTaken = signal<boolean>(false);
+
   ngAfterViewInit(): void {
     const video = this.videoElRef()!.nativeElement;
     video.srcObject = this.matDialogData.stream;
@@ -31,7 +41,9 @@ export class CameraDialog implements AfterViewInit {
       const canvas = this.canvasElRef()!.nativeElement;
       const video = this.videoElRef()!.nativeElement;
 
-      this.height = video.videoHeight / (video.videoWidth / this.width);
+      this.width = video.videoWidth;
+      this.height = video.videoHeight;
+      console.log(video.videoHeight, video.videoWidth, this.width);
 
       video.setAttribute('width', this.width.toString());
       video.setAttribute('height', this.height.toString());
@@ -55,13 +67,22 @@ export class CameraDialog implements AfterViewInit {
     if (this.width && this.height) {
       canvas.width = this.width;
       canvas.height = this.height;
-      context.drawImage(video, 0, 0, this.width, this.height);
+
+      const sh = this.height * 0.95;
+      const sw = (sh * 4) / 7;
+      const sx = (this.width - sw) / 2;
+      const sy = this.height * 0.025;
+      console.log(this.width, this.height, sh, sw, sx, sy);
+
+      context.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+      // context.drawImage(video, 0, 0, this.width, this.height);
 
       const data = canvas.toDataURL('image/png');
       // this.parseTextService.OCRSpace(data);
       this.parseTextService.tesseract(this.dataURLtoFile(data, 'art.png'));
+      this.photoTaken.set(true);
       this.stop();
-      this.matDialogRef.close();
+      // this.matDialogRef.close();
     } else {
       this.clearPhoto();
     }

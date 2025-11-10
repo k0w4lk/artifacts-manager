@@ -18,6 +18,7 @@ export const PHYS_AMPLIFICATION = 'Бонус физ. урона';
 
 export const ATK_FLAT = 'Сила атаки';
 export const HP_FLAT = 'НР';
+export const DEF_FLAT = 'Защита';
 
 export const STATS = [
   {
@@ -65,6 +66,7 @@ export const STATS = [
   { key: 'physAmplification', name: 'Бонус физ. урона' },
   { key: 'atkFlat', name: 'Сила атаки' },
   { key: 'hpFlat', name: 'НР' },
+  { key: 'defFlat', name: 'Защита' },
 ];
 
 export const ALL_STATS = [
@@ -86,6 +88,7 @@ export const ALL_STATS = [
   PHYS_AMPLIFICATION,
   ATK_FLAT,
   HP_FLAT,
+  DEF_FLAT,
 ];
 
 export enum ArtefactSetPart {
