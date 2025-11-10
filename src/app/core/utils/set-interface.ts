@@ -1,5 +1,5 @@
 export interface ArtifactSet {
-  id?: string;
+  id: string;
   nameEn: string;
   nameRu: string;
 }

@@ -1,93 +1,86 @@
 <input type="file" (change)="onFileChange($event)" />
 
-<div class="card">
-  <form [formGroup]="artifactForm" class="form">
-    <fieldset>
-      <mat-form-field>
-        <mat-label>Сет</mat-label>
-        <input matInput type="text" formControlName="set" [matAutocomplete]="auto" />
-        <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
-          @for (art of filteredSets | async; track art.id) {
-          <mat-option [value]="art">{{ art.nameRu }}</mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
+<app-camera />
 
-      <div class="field">
-        <label>Тип артефакта</label>
-        <select formControlName="setPartType">
-          <option value="">—</option>
-          @for (p of dataService.setParts(); track p) {
-          <option [value]="p.nameRu">{{ p.nameRu }}</option>
-          }
-        </select>
-      </div>
-    </fieldset>
+<mat-card>
+  <mat-card-content>
+    <form [formGroup]="artifactForm" class="form">
+      <fieldset class="fields-group">
+        <legend>Мета</legend>
+        <mat-form-field>
+          <mat-label>Сет</mat-label>
+          <input matInput type="text" formControlName="set" [matAutocomplete]="auto" />
+          <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+            @for (art of filteredSets | async; track art.id) {
+              <mat-option [value]="art">{{ art.nameRu }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
 
-    <fieldset>
-      <div class="field">
-        <label>Главная характеристика</label>
-        <select formControlName="mainStat">
-          <option value="">—</option>
-          @for(mainStat of partMainStats(); track mainStat) {
-          <option [value]="mainStat.nameEn">{{ mainStat.nameEn }}</option>
-          }
-        </select>
-      </div>
-    </fieldset>
+        <mat-form-field>
+          <mat-label>Тип артефакта</mat-label>
+          <mat-select formControlName="setPartType">
+            @for (part of dataService.setParts(); track part) {
+              <mat-option [value]="part">{{ part.nameRu }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-    <fieldset>
-      <mat-form-field>
-        <mat-label>ATK %</mat-label>
-        <input matInput type="number" step="0.1" [max]="35" formControlName="atkPercent" />
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Главная характеристика</mat-label>
+          <mat-select formControlName="mainStat">
+            @for (mainStat of partMainStats(); track mainStat) {
+              <mat-option [value]="mainStat">{{ mainStat.nameRu }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </fieldset>
 
-      <mat-form-field>
-        <mat-label>HP %</mat-label>
-        <input matInput type="number" step="0.1" [max]="35" formControlName="hpPercent" />
-      </mat-form-field>
+      <fieldset class="fields-group">
+        <legend>Статы</legend>
+        <mat-form-field>
+          <mat-label>ATK %</mat-label>
+          <input matInput type="number" step="0.1" [max]="35" formControlName="atkPercent" />
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>DEF %</mat-label>
-        <input matInput type="number" step="0.1" [max]="43.7" formControlName="defPercent" />
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>HP %</mat-label>
+          <input matInput type="number" step="0.1" [max]="35" formControlName="hpPercent" />
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Крит. урон %</mat-label>
-        <input matInput type="number" step="0.1" [max]="46.6" formControlName="critDmg" />
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>DEF %</mat-label>
+          <input matInput type="number" step="0.1" [max]="43.7" formControlName="defPercent" />
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Шанс крита %</mat-label>
-        <input matInput type="number" step="0.1" [max]="23.3" formControlName="critRate" />
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Крит. урон %</mat-label>
+          <input matInput type="number" step="0.1" [max]="46.6" formControlName="critDmg" />
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Восст. энергии %</mat-label>
-        <input matInput type="number" step="0.1" [max]="38.9" formControlName="er" />
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Шанс крита %</mat-label>
+          <input matInput type="number" step="0.1" [max]="23.3" formControlName="critRate" />
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Мастерство стихий</mat-label>
-        <input matInput type="number" step="1" [max]="140" formControlName="em" />
-      </mat-form-field>
-    </fieldset>
+        <mat-form-field>
+          <mat-label>Восст. энергии %</mat-label>
+          <input matInput type="number" step="0.1" [max]="38.9" formControlName="er" />
+        </mat-form-field>
 
-    <div class="actions">
-      <button matButton="outlined" (click)="clear()">Очистить</button>
-      <button matButton="filled" (click)="calculate()">Рассчитать</button>
-    </div>
-  </form>
+        <mat-form-field>
+          <mat-label>Мастерство стихий</mat-label>
+          <input matInput type="number" step="1" [max]="140" formControlName="em" />
+        </mat-form-field>
+      </fieldset>
+    </form>
+  </mat-card-content>
 
-  <div class="legend">
-    <span class="chip"><span class="dot" style="background: greenyellow"></span>Идеально</span>
-    <span class="chip"><span class="dot" style="background: yellow"></span>Отлично</span>
-    <span class="chip"><span class="dot" style="background: orange"></span>Хорошо</span>
-    <span class="chip"><span class="dot" style="background: lightskyblue"></span>СОВЕРШЕННО!</span>
-    <span class="chip"><span class="dot" style="background: red"></span>Так себе</span>
-    <span class="chip"><span class="dot" style="background: deeppink"></span>Оффсетник</span>
-  </div>
-</div>
+  <mat-card-footer class="card-footer">
+    <button matButton="outlined" (click)="clear()">Очистить</button>
+    <button matButton="filled" (click)="calculate()">Рассчитать</button>
+  </mat-card-footer>
+</mat-card>
 
 <div class="card table-card">
   <div class="field">

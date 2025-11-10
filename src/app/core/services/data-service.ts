@@ -18,7 +18,6 @@ export class DataService {
   readonly #statsCollection = collection(this.#firestore, 'stats');
 
   readonly #chars$ = collectionData(this.#charsCollection);
-  readonly #setParts$ = collectionData(this.#setPartsCollection);
 
   readonly artefactSets = signal<ArtifactSet[]>([]);
   readonly characters = signal<Character[]>([]);
@@ -46,7 +45,9 @@ export class DataService {
   }
 
   #requestSetParts(): void {
-    this.#setParts$.subscribe((setParts) => {
+    from(getDocs(this.#setPartsCollection)).subscribe((snapshot) => {
+      const setParts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
       this.setParts.set(setParts as SetPart[]);
     });
   }

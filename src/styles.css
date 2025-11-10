@@ -1,24 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
 /* Modern UI styles for StatCounter */
-:root {
-  --bg: #0f1220;
-  --panel: #151a2e;
-  --panel-2: #1b2140;
-  --text: #e6e9ef;
-  --muted: #a2a8b4;
-  --primary: #6c7cff;
-  --primary-600: #5b6af2;
-  --primary-700: #4956d9;
-  --border: #242a45;
-  --success: #61d095;
-  --warning: #ffd166;
-  --danger: #ff6b6b;
-  --info: #64b5f6;
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
 body {
-  background-color: var(--bg);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
 }
-
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

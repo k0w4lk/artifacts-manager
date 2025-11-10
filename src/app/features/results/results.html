@@ -17,22 +17,3 @@
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
   <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 </table>
-
-<!-- <table>
-    <thead>
-      <tr>
-        <th style="width: 34%">Персонаж</th>
-        <th style="width: 33%">Статы</th>
-        <th style="width: 33%">Сет</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of results(); track row.name) {
-      <tr>
-        <td>{{ row.name }}</td>
-        <td [style.color]="colorizeStat(row.stat)">{{ row.stat }}</td>
-        <td [style.color]="colorizeSet(row.set)">{{ row.set }}</td>
-      </tr>
-      }
-    </tbody>
-  </table> -->

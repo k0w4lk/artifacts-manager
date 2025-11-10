@@ -1,8 +1,31 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { AsyncPipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { map, Observable, startWith, switchMap } from 'rxjs';
 import { DataService } from '../../core/services/data-service';
 import { Result } from '../../core/utils/result-interface';
+import { ArtifactSet } from '../../core/utils/set-interface';
+import { SetPart, SetPartKey } from '../../core/utils/set-part-interface';
+import { Stat, StatKey } from '../../core/utils/stat-interface';
+import { Artefact, Character } from '../../core/utils/types';
+import { Artifact, ParseTextService } from '../../parse-text-service';
+import { ExtractStatsPipe } from '../../ui/pipes/extract-stats-pipe';
+import { Results } from '../results/results';
+import { MatCardModule } from '@angular/material/card';
+import { Camera } from '../../camera/camera';
 import {
   ATK_PERCENT,
   CRIT_DMG,
@@ -11,36 +34,25 @@ import {
   ELEMENTAL_MASTERY,
   ENERGY_RECHARGE,
   HP_PERCENT,
-  STATS,
 } from '../../core/utils/stat-names';
-import { Artefact, Character } from '../../core/utils/types';
-import { Artifact, ParseTextService } from '../../parse-text-service';
-import { ExtractStatsPipe } from '../../ui/pipes/extract-stats-pipe';
-import { Results } from '../results/results';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButton, MatButtonModule } from '@angular/material/button';
-import { MatFooterCell } from '@angular/material/table';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { ArtifactSet } from '../../core/utils/set-interface';
-import { map, Observable, startWith } from 'rxjs';
-import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-stats-counter',
   imports: [
     AsyncPipe,
-    ReactiveFormsModule,
-    Results,
+    Camera,
     MatAutocompleteModule,
     MatButtonModule,
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatFooterCell,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    ReactiveFormsModule,
+    Results,
   ],
   templateUrl: './stats-counter.html',
   styleUrl: './stats-counter.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatsCounter {
   readonly dataService = inject(DataService);
@@ -50,8 +62,8 @@ export class StatsCounter {
 
   readonly artifactForm = new FormGroup({
     set: new FormControl<ArtifactSet | null>(null),
-    setPartType: new FormControl<string | null>(null),
-    mainStat: new FormControl<string | null>(null),
+    setPartType: new FormControl<SetPart | null>(null),
+    mainStat: new FormControl<Stat | null>(null),
     atkPercent: new FormControl<number | null>(null),
     hpPercent: new FormControl<number | null>(null),
     defPercent: new FormControl<number | null>(null),
@@ -66,14 +78,19 @@ export class StatsCounter {
 
   readonly #currentSetPart = toSignal(this.artifactForm.controls.setPartType.valueChanges);
 
-  readonly filteredSets: Observable<ArtifactSet[]> =
-    this.artifactForm.controls.set.valueChanges.pipe(
-      startWith(''),
-      map((value) => {
-        const name = typeof value === 'string' ? value : '';
-        return name ? this._filter(name as string) : this.dataService.artefactSets().slice();
-      })
-    );
+  readonly filteredSets: Observable<ArtifactSet[]> = toObservable(
+    this.dataService.artefactSets,
+  ).pipe(
+    switchMap(() =>
+      this.artifactForm.controls.set.valueChanges.pipe(
+        startWith(''),
+        map((value) => {
+          const name = typeof value === 'string' ? value : '';
+          return name ? this._filter(name as string) : this.dataService.artefactSets().slice();
+        }),
+      ),
+    ),
+  );
 
   _filter(name: string): ArtifactSet[] {
     const filterValue = name.toLowerCase();
@@ -86,9 +103,8 @@ export class StatsCounter {
   readonly partMainStats = computed(() => {
     const mainStatsIds = this.dataService
       .setParts()
-      .find((p) => p.nameRu === this.#currentSetPart())?.mainStats;
-    const mainStatNames = this.dataService.stats().filter((s) => !!mainStatsIds?.includes(s.id));
-    return mainStatNames;
+      .find((p) => p.id === this.#currentSetPart()?.id)?.mainStats;
+    return this.dataService.stats().filter((s) => !!mainStatsIds?.includes(s.id));
   });
 
   protected searchText = new FormControl<string>('');
@@ -108,14 +124,15 @@ export class StatsCounter {
     return art && art.nameRu ? art.nameRu : '';
   }
 
-  protected onPieceChange(value: Artifact | null) {
+  onPieceChange(value: Artifact | null) {
     this.artifactForm.patchValue({
       set: null,
-      setPartType: value?.setPartType ?? null,
+      setPartType:
+        this.dataService.setParts().find((sp) => sp.nameRu === value?.setPartType) ?? null,
       mainStat:
-        STATS.find((stat) => {
-          return stat.key === Array.from(value?.stats?.entries() || [])?.[0]?.[1]?.key;
-        })?.name ?? 'НР',
+        this.dataService.stats().find((stat) => {
+          return stat.nameRu === Array.from(value?.stats?.entries() || [])?.[0]?.[1]?.key;
+        }) ?? null,
       atkPercent: value?.stats.get(ATK_PERCENT)?.value ?? null,
       hpPercent: value?.stats.get(HP_PERCENT)?.value ?? null,
       defPercent: value?.stats.get(DEF_PERCENT)?.value ?? null,
@@ -186,7 +203,7 @@ export class StatsCounter {
             resolve(newFile);
           },
           imageFile.type,
-          quality
+          quality,
         );
       };
 
@@ -223,31 +240,28 @@ export class StatsCounter {
 
     console.log(formData);
 
-    const artefact: Artefact = {
-      atkPercent: +(formData.atkPercent ?? 0 / 5).toFixed(3),
-      defPercent: +(formData.defPercent ?? 0 / 6.2).toFixed(3),
-      hpPercent: +(formData.hpPercent ?? 0 / 5).toFixed(3),
-      atk: +(formData.atk ?? 0 / 16.5).toFixed(3),
-      def: +(formData.def ?? 0 / 19.5).toFixed(3),
-      hp: +(formData.hp ?? 0 / 254).toFixed(3),
-      em: +(formData.em ?? 0 / 20).toFixed(3),
-      er: +(formData.er ?? 0 / 5.5).toFixed(3),
-      critDmg: +(formData.critDmg ?? 0 / 6.6).toFixed(3),
-      critRate: +(formData.critRate ?? 0 / 3.3).toFixed(3),
-      set: formData.set ?? null,
-      mainStat:
-        STATS.find(
-          (stat) => stat.key === STATS.find((stat) => stat.name === formData.mainStat)?.key
-        )?.name ?? '',
-      setPartType: formData.setPartType ?? '',
-    };
+    // const artefact: Artefact = {
+    //   atkPercent: +(formData.atkPercent ?? 0 / 5).toFixed(3),
+    //   defPercent: +(formData.defPercent ?? 0 / 6.2).toFixed(3),
+    //   hpPercent: +(formData.hpPercent ?? 0 / 5).toFixed(3),
+    //   atk: +(formData.atk ?? 0 / 16.5).toFixed(3),
+    //   def: +(formData.def ?? 0 / 19.5).toFixed(3),
+    //   hp: +(formData.hp ?? 0 / 254).toFixed(3),
+    //   em: +(formData.em ?? 0 / 20).toFixed(3),
+    //   er: +(formData.er ?? 0 / 5.5).toFixed(3),
+    //   critDmg: +(formData.critDmg ?? 0 / 6.6).toFixed(3),
+    //   critRate: +(formData.critRate ?? 0 / 3.3).toFixed(3),
+    //   set: formData.set ?? null,
+    //   mainStat: formData.mainStat ?? null,
+    //   setPartType: formData.setPartType ?? '',
+    // };
 
     const rows: Result[] = [];
     for (const c of this.dataService.characters()) {
       rows.push({
         char: c.nameEn,
-        profit: this.#setProfit(artefact, c),
-        setType: this.setFunction(c, artefact),
+        profit: this.#setProfit(formData, c),
+        setType: this.#setFunction(c, formData),
       });
     }
     this.results.set(rows);
@@ -274,36 +288,37 @@ export class StatsCounter {
     this.results.set(filtered);
   }
 
-  private setFunction(character: Character, a: Artefact): string | null {
+  #setFunction(character: Character, a: Artefact): string | null {
     const { set } = this.artifactForm.getRawValue();
 
     if (!set) return 'Введи сет';
     let error = true;
-    if (a.setPartType === 'Пески времени')
-      error = a.mainStat && character.clockStats.includes(a.mainStat) ? false : true;
-    if (a.setPartType === 'Кубок пространства')
-      error = a.mainStat && character.gobletStats.includes(a.mainStat) ? false : true;
-    if (a.setPartType === 'Корона разума')
-      error = a.mainStat && character.crownStats.includes(a.mainStat) ? false : true;
-    if (a.setPartType === 'Цветок жизни' || a.setPartType === 'Перо смерти') error = false;
+    if (a.setPartType?.key === SetPartKey.Sands)
+      error = a.mainStat && character.clockStats.includes(a.mainStat.id) ? false : true;
+    if (a.setPartType?.key === SetPartKey.Goblet)
+      error = a.mainStat && character.gobletStats.includes(a.mainStat.id) ? false : true;
+    if (a.setPartType?.key === SetPartKey.Circlet)
+      error = a.mainStat && character.crownStats.includes(a.mainStat.id) ? false : true;
+    if (a.setPartType?.key === SetPartKey.Flower || a.setPartType?.key === SetPartKey.Plume)
+      error = false;
     if (error) return null;
 
     if (
       this.extractStatsPipe
-        .transform(character.mainSets, this.dataService.artefactSets())
-        .includes(set.nameRu)
+        .transform<ArtifactSet>(character.mainSets, this.dataService.artefactSets())
+        .find((s) => s.id === set.id)
     )
       return 'Сетник';
     if (
       this.extractStatsPipe
-        .transform(character.altSets, this.dataService.artefactSets())
-        .includes(set.nameRu)
+        .transform<ArtifactSet>(character.altSets, this.dataService.artefactSets())
+        .find((s) => s.id === set.id)
     )
       return 'Альтернатива';
     if (
       this.extractStatsPipe
-        .transform(character.subSets, this.dataService.artefactSets())
-        .includes(set.nameRu)
+        .transform<ArtifactSet>(character.subSets, this.dataService.artefactSets())
+        .find((s) => s.id === set.id)
     )
       return 'Солянка';
     return 'Оффсетник';
@@ -312,53 +327,55 @@ export class StatsCounter {
   #setProfit(art: Artefact, char: Character): string | null {
     const res = [0, 0, 0, 0];
 
-    console.log(
-      char.nameEn,
-      this.extractStatsPipe.transform(char.perfectStats, this.dataService.stats())
+    const perfectStats = this.extractStatsPipe.transform(
+      char.perfectStats,
+      this.dataService.stats(),
     );
     console.log(
       char.nameEn,
-      this.extractStatsPipe.transform(char.goodStats, this.dataService.stats())
+      this.extractStatsPipe.transform(char.goodStats, this.dataService.stats()),
     );
     console.log(
       char.nameEn,
-      this.extractStatsPipe.transform(char.okStats, this.dataService.stats())
+      this.extractStatsPipe.transform(char.okStats, this.dataService.stats()),
     );
 
-    for (const stat of char.perfectStats) {
+    for (const stat of perfectStats) {
       if (
-        art.mainStat === stat ||
-        art.setPartType === 'Цветок жизни' ||
-        art.setPartType === 'Перо смерти'
+        art.mainStat?.id === stat.id ||
+        art.setPartType?.key === SetPartKey.Flower ||
+        art.setPartType?.key === SetPartKey.Plume
       ) {
         res[0] = 1;
         break;
       }
     }
 
-    const filledStats = [
-      art.critDmg ? CRIT_DMG : null,
-      art.critRate ? CRIT_RATE : null,
-      art.atkPercent ? ATK_PERCENT : null,
-      art.hpPercent ? HP_PERCENT : null,
-      art.defPercent ? DEF_PERCENT : null,
-      art.er ? ENERGY_RECHARGE : null,
-      art.em ? ELEMENTAL_MASTERY : null,
-    ].filter(Boolean);
+    const filledStats = (
+      [
+        art.critDmg && this.dataService.stats().find((s) => s.key === StatKey.CritDmg),
+        art.critRate && this.dataService.stats().find((s) => s.key === StatKey.CritRate),
+        art.atkPercent && this.dataService.stats().find((s) => s.key === StatKey.AtkPercent),
+        art.hpPercent && this.dataService.stats().find((s) => s.key === StatKey.HpPercent),
+        art.defPercent && this.dataService.stats().find((s) => s.key === StatKey.DefPercent),
+        art.er && this.dataService.stats().find((s) => s.key === StatKey.EnergyRecharge),
+        art.em && this.dataService.stats().find((s) => s.key === StatKey.ElementalMastery),
+      ].filter(Boolean) as Stat[]
+    ).map((s) => s.id);
 
     for (const stat of this.extractStatsPipe.transform(
       char.perfectStats,
-      this.dataService.stats()
+      this.dataService.stats(),
     )) {
-      res[1] = res[1] + +filledStats.includes(stat);
+      res[1] = res[1] + +filledStats.includes(stat.id);
     }
 
     for (const stat of this.extractStatsPipe.transform(char.goodStats, this.dataService.stats())) {
-      res[2] = res[2] + +filledStats.includes(stat);
+      res[2] = res[2] + +filledStats.includes(stat.id);
     }
 
     for (const stat of this.extractStatsPipe.transform(char.okStats, this.dataService.stats())) {
-      res[3] = res[3] + +filledStats.includes(stat);
+      res[3] = res[3] + +filledStats.includes(stat.id);
     }
 
     const count = res[0] * 1000 + res[1] * 100 + res[2] * 10 + res[3];
@@ -370,32 +387,49 @@ export class StatsCounter {
       1 *
         Math.max(
           0,
-          Math.min(4 - char.goodStats.length - char.perfectStats.length, char.okStats.length)
+          Math.min(4 - char.goodStats.length - char.perfectStats.length, char.okStats.length),
         );
 
+    console.log(char.nameEn, perfectScore, count);
+
     return count == perfectScore
-      ? 'Совершенно'
+      ? 'Великолепно'
       : count > perfectScore - 10
-      ? 'Отлично'
-      : count > perfectScore - 110
-      ? 'Хорошо'
-      : count > perfectScore - 220
-      ? 'Приемлемо'
-      : null;
+        ? 'Отлично'
+        : count > perfectScore - 110
+          ? 'Хорошо'
+          : count > perfectScore - 220
+            ? 'Приемлемо'
+            : null;
   }
 
   #checkMainStatDuplicate(): undefined | never {
     const { atkPercent, hpPercent, defPercent, atk, hp, critDmg, critRate, er, em, mainStat } =
       this.artifactForm.getRawValue();
 
-    const inputs = [atkPercent, hpPercent, defPercent, atk, hp, critDmg, critRate, er, em];
+    if (!mainStat) {
+      alert('Введи верхний стат');
+      throw Error('Введи верхний стат');
+    }
+
+    const inputs = [
+      { value: atkPercent, key: StatKey.AtkPercent },
+      { value: hpPercent, key: StatKey.HpPercent },
+      { value: defPercent, key: StatKey.DefPercent },
+      { value: atk, key: StatKey.Atk },
+      { value: hp, key: StatKey.Hp },
+      { value: critDmg, key: StatKey.CritDmg },
+      { value: critRate, key: StatKey.CritRate },
+      { value: er, key: StatKey.EnergyRecharge },
+      { value: em, key: StatKey.ElementalMastery },
+    ];
+
+    if (!mainStat?.repeatable) return;
 
     for (let i = 0; i < inputs.length; i++) {
-      if (
-        inputs[i]! > 0 &&
-        this.dataService.repeatableStats()[i].nameRu ===
-          STATS.find((stat) => stat.name === mainStat)?.name
-      ) {
+      if (Number(inputs[i].value) > 0 && inputs[i].key === mainStat?.key) {
+        console.log(inputs[i], i);
+
         alert('Верхний и нижний стат повторяться не могут!');
         throw Error('Верхний и нижний стат повторяться не могут!');
       }
