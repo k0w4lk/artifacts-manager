@@ -1,0 +1,11 @@
+<div class="camera-focus-area">
+  <video #video class="video" (canplay)="captureFrames()">Video stream not available.</video>
+</div>
+
+<canvas #canvas class="canvas"></canvas>
+
+<pre>{{ parseTextService.res() | json }}</pre>
+
+<button (click)="takePicture($event)">Capture photo</button>
+
+<button (click)="stop()">stop</button>

@@ -1,0 +1,32 @@
+:host {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.video {
+  /* height: 80vh; */
+}
+
+.canvas {
+  display: none;
+}
+
+.camera-focus-area {
+  position: relative;
+}
+
+.camera-focus-area::after {
+  aspect-ratio: 4 / 7;
+  border: 3px dashed rgb(182, 164, 164);
+  border-radius: 10px;
+  content: '';
+  display: block;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  height: 95%;
+}

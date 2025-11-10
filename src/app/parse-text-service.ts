@@ -50,6 +50,8 @@ export class ParseTextService {
     })
       .then((res) => res.json())
       .then((res) => {
+        console.log(res);
+
         const text = res.ParsedResults[0].ParsedText;
         this.#parse(text);
       });
@@ -71,13 +73,15 @@ export class ParseTextService {
   }
 
   #parse(text: string) {
+    console.log(text);
+
     const setName =
       this.artefactService.artefactSets().find((art) => text.includes(art.nameRu))?.nameRu || '';
     const setPart = Object.values(ArtefactSetPart).find((part) => text.includes(part)) || '';
     const mainStatRegex = new RegExp(`(${ALL_STATS?.join('|')}).*\\n*(\\d+[,\\s]*\\d*)(%*)`, 'm');
     const statRegex = new RegExp(
       `(${ALL_STATS?.join('|')})[\\s|\\n]\\+*(\\d+[,\\s]*\\d*)(%*)`,
-      'gm'
+      'gm',
     );
     const mainStat = text.match(mainStatRegex);
 

@@ -126,7 +126,7 @@ export class StatsCounter {
 
   onPieceChange(value: Artifact | null) {
     this.artifactForm.patchValue({
-      set: null,
+      set: this.dataService.artefactSets().find((set) => set.nameRu === value?.setName) ?? null,
       setPartType:
         this.dataService.setParts().find((sp) => sp.nameRu === value?.setPartType) ?? null,
       mainStat:
