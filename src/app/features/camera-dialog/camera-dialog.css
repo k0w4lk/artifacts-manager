@@ -14,6 +14,7 @@
 }
 
 .camera-focus-area {
+  display: flex;
   position: relative;
 }
 

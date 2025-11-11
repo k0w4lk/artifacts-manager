@@ -26,7 +26,13 @@ export class CameraDialog implements AfterViewInit {
 
   width = Math.min(window.innerWidth, window.innerHeight) * 0.95; // We will scale the photo width to this
   height = 0; // This will be computed based on the input stream
+
+  initialVideoHeight = 0;
+  initialVideoWidth = 0;
+
   streaming = false;
+
+  cfg = signal<any>({});
 
   readonly photoTaken = signal<boolean>(false);
 
@@ -41,14 +47,22 @@ export class CameraDialog implements AfterViewInit {
       const canvas = this.canvasElRef()!.nativeElement;
       const video = this.videoElRef()!.nativeElement;
 
+      this.initialVideoHeight = video.videoHeight;
+      this.initialVideoWidth = video.videoWidth;
+
+      console.log(this.initialVideoWidth, this.initialVideoHeight);
+
       this.width = video.videoWidth;
       this.height = video.videoHeight;
       console.log(video.videoHeight, video.videoWidth, this.width);
 
+      const sh = this.height * 0.95;
+      const sw = (sh * 4) / 7;
+
       video.setAttribute('width', this.width.toString());
       video.setAttribute('height', this.height.toString());
-      canvas.setAttribute('width', this.width.toString());
-      canvas.setAttribute('height', this.height.toString());
+      canvas.setAttribute('width', sw.toString());
+      canvas.setAttribute('height', sh.toString());
       this.streaming = true;
     }
   }
@@ -65,17 +79,29 @@ export class CameraDialog implements AfterViewInit {
     const video = this.videoElRef()!.nativeElement;
     const context = canvas.getContext('2d')!;
     if (this.width && this.height) {
-      canvas.width = this.width;
-      canvas.height = this.height;
+      // canvas.width = this.width;
+      // canvas.height = this.height;
 
       const sh = this.height * 0.95;
       const sw = (sh * 4) / 7;
       const sx = (this.width - sw) / 2;
       const sy = this.height * 0.025;
+      this.cfg.set({
+        videoWidth: this.width,
+        videoHeight: this.height,
+        initVideoWidth: this.initialVideoWidth,
+        initVideoHeight: this.initialVideoHeight,
+        sh,
+        sw,
+        sx,
+        sy,
+      });
       console.log(this.width, this.height, sh, sw, sx, sy);
 
       context.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-      // context.drawImage(video, 0, 0, this.width, this.height);
+
+      // canvas.width = sw;
+      // canvas.height = sh;
 
       const data = canvas.toDataURL('image/png');
       // this.parseTextService.OCRSpace(data);

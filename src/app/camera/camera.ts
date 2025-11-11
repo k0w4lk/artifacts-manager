@@ -22,10 +22,10 @@ export class Camera {
       .then((stream) => {
         this.matDialog.open(CameraDialog, {
           data: { stream },
-          width: '100vw',
-          height: '100vh',
-          maxWidth: '100vw',
-          maxHeight: '100vh',
+          width: '100dvw',
+          height: '100dvh',
+          maxWidth: '100dvw',
+          maxHeight: '100dvh',
           hasBackdrop: false,
         });
       })

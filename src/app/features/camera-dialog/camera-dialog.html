@@ -6,7 +6,7 @@
 
 <canvas #canvas class="canvas" [class.hidden]="!photoTaken()"></canvas>
 
-<pre>{{ parseTextService.res() | json }}</pre>
+<pre>{{ cfg() | json }}</pre>
 
 <button (click)="takePicture($event)">Capture photo</button>
 
