@@ -4,6 +4,7 @@ import {
   ElementRef,
   inject,
   OnInit,
+  Renderer2,
   signal,
   viewChild,
 } from '@angular/core';
@@ -21,18 +22,19 @@ export class CameraDialog implements AfterViewInit {
   readonly matDialogData = inject<{ stream: MediaStream }>(MAT_DIALOG_DATA);
   readonly matDialogRef = inject(MatDialogRef);
   readonly parseTextService = inject(ParseTextService);
+  readonly renderer = inject(Renderer2);
   readonly canvasElRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   readonly videoElRef = viewChild<ElementRef<HTMLVideoElement>>('video');
 
   width = Math.min(window.innerWidth, window.innerHeight) * 0.95; // We will scale the photo width to this
   height = 0; // This will be computed based on the input stream
 
-  initialVideoHeight = 0;
-  initialVideoWidth = 0;
+  videoClientHeight = 0;
+  videoClientWidth = 0;
+
+  tempCanvas: HTMLCanvasElement | null = null;
 
   streaming = false;
-
-  cfg = signal<any>({});
 
   readonly photoTaken = signal<boolean>(false);
 
@@ -47,11 +49,6 @@ export class CameraDialog implements AfterViewInit {
       const canvas = this.canvasElRef()!.nativeElement;
       const video = this.videoElRef()!.nativeElement;
 
-      this.initialVideoHeight = video.videoHeight;
-      this.initialVideoWidth = video.videoWidth;
-
-      console.log(this.initialVideoWidth, this.initialVideoHeight);
-
       this.width = video.videoWidth;
       this.height = video.videoHeight;
       console.log(video.videoHeight, video.videoWidth, this.width);
@@ -63,6 +60,13 @@ export class CameraDialog implements AfterViewInit {
       video.setAttribute('height', this.height.toString());
       canvas.setAttribute('width', sw.toString());
       canvas.setAttribute('height', sh.toString());
+
+      this.videoClientHeight = video.clientHeight * 0.95;
+      this.videoClientWidth = Math.min(
+        video.clientWidth * 0.95,
+        ((this.videoClientHeight * 0.95) / 7) * 4,
+      );
+
       this.streaming = true;
     }
   }
@@ -75,44 +79,32 @@ export class CameraDialog implements AfterViewInit {
   }
 
   takePicture(event: MouseEvent) {
-    const canvas = this.canvasElRef()!.nativeElement;
+    this.tempCanvas = this.canvasElRef()!.nativeElement;
     const video = this.videoElRef()!.nativeElement;
-    const context = canvas.getContext('2d')!;
+    const context = this.tempCanvas.getContext('2d')!;
     if (this.width && this.height) {
-      // canvas.width = this.width;
-      // canvas.height = this.height;
-
       const sh = this.height * 0.95;
       const sw = (sh * 4) / 7;
       const sx = (this.width - sw) / 2;
       const sy = this.height * 0.025;
-      this.cfg.set({
-        videoWidth: this.width,
-        videoHeight: this.height,
-        initVideoWidth: this.initialVideoWidth,
-        initVideoHeight: this.initialVideoHeight,
-        sh,
-        sw,
-        sx,
-        sy,
-      });
-      console.log(this.width, this.height, sh, sw, sx, sy);
 
       context.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
 
-      // canvas.width = sw;
-      // canvas.height = sh;
-
-      const data = canvas.toDataURL('image/png');
-      // this.parseTextService.OCRSpace(data);
-      this.parseTextService.tesseract(this.dataURLtoFile(data, 'art.png'));
-      this.photoTaken.set(true);
       this.stop();
-      // this.matDialogRef.close();
+      this.photoTaken.set(true);
     } else {
       this.clearPhoto();
     }
     event.preventDefault();
+  }
+
+  acceptScreenshot(): void {
+    if (!this.tempCanvas) return;
+
+    const data = this.tempCanvas.toDataURL('image/png');
+    // this.parseTextService.OCRSpace(data);
+    this.parseTextService.tesseract(this.dataURLtoFile(data, 'art.png'));
+    this.matDialogRef.close();
   }
 
   clearPhoto() {

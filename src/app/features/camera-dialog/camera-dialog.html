@@ -1,13 +1,20 @@
-<div class="camera-focus-area">
-  <video #video class="video" [class.hidden]="photoTaken()" (canplay)="captureFrames()">
-    Video stream not available.
-  </video>
+<div class="camera-focus-area" [class.hidden]="photoTaken()">
+  <video #video class="video" (canplay)="captureFrames()">Video stream not available.</video>
+
+  <div
+    #area
+    class="area"
+    [style.width.px]="videoClientWidth"
+    [style.height.px]="videoClientHeight"
+  ></div>
 </div>
 
 <canvas #canvas class="canvas" [class.hidden]="!photoTaken()"></canvas>
 
-<pre>{{ cfg() | json }}</pre>
+@if (!photoTaken()) {
+  <button (click)="takePicture($event)">Capture photo</button>
+}
 
-<button (click)="takePicture($event)">Capture photo</button>
-
-<button (click)="stop()">stop</button>
+@if (photoTaken()) {
+  <button (click)="acceptScreenshot()">Accept</button>
+}
