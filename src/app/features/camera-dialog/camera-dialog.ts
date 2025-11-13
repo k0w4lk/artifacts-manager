@@ -51,7 +51,6 @@ export class CameraDialog implements AfterViewInit {
 
       this.width = video.videoWidth;
       this.height = video.videoHeight;
-      console.log(video.videoHeight, video.videoWidth, this.width);
 
       const sh = this.height * 0.95;
       const sw = (sh * 4) / 7;

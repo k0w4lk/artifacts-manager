@@ -1,6 +1,6 @@
-export const ATK_PERCENT = 'Сила атаки %';
-export const HP_PERCENT = 'НР %';
-export const DEF_PERCENT = 'Защита %';
+export const ATK_PERCENT = 'Сила атаки';
+export const HP_PERCENT = 'НР';
+export const DEF_PERCENT = 'Защита';
 export const ENERGY_RECHARGE = 'Восст. энергии';
 export const ELEMENTAL_MASTERY = 'Мастерство стихий';
 export const CRIT_DMG = 'Крит. урон';
@@ -19,55 +19,6 @@ export const PHYS_AMPLIFICATION = 'Бонус физ. урона';
 export const ATK_FLAT = 'Сила атаки';
 export const HP_FLAT = 'НР';
 export const DEF_FLAT = 'Защита';
-
-export const STATS = [
-  {
-    key: 'atkPercent',
-    name: 'Сила атаки',
-  },
-  {
-    key: 'defPercent',
-    name: 'Защита',
-  },
-  {
-    key: 'hpPercent',
-    name: 'НР %',
-  },
-  {
-    key: 'energyRecharge',
-    name: 'Восст. энергии',
-  },
-  {
-    key: 'elementalMastery',
-    name: 'Мастерство стихий',
-  },
-  {
-    key: 'critDmg',
-    name: 'Крит. урон',
-  },
-  {
-    key: 'critRate',
-    name: 'Шанс крит. попадания',
-  },
-  {
-    key: 'healingBonus',
-    name: 'Бонус лечения',
-  },
-  {
-    key: 'anemoAmplification',
-    name: 'Бонус Анемо урона',
-  },
-  { key: 'geoAmplification', name: 'Бонус Гео урона' },
-  { key: 'electroAmplification', name: 'Бонус Электро урона' },
-  { key: 'dendroAmplification', name: 'Бонус Дендро урона' },
-  { key: 'hydroAmplification', name: 'Бонус Гидро урона' },
-  { key: 'pyroAmplification', name: 'Бонус Пиро урона' },
-  { key: 'cryoAmplification', name: 'Бонус Крио урона' },
-  { key: 'physAmplification', name: 'Бонус физ. урона' },
-  { key: 'atkFlat', name: 'Сила атаки' },
-  { key: 'hpFlat', name: 'НР' },
-  { key: 'defFlat', name: 'Защита' },
-];
 
 export const ALL_STATS = [
   ATK_PERCENT,

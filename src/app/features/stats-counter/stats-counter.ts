@@ -63,15 +63,15 @@ export class StatsCounter {
   readonly artifactForm = new FormGroup({
     set: new FormControl<ArtifactSet | null>(null),
     setPartType: new FormControl<SetPart | null>(null),
-    mainStat: new FormControl<Stat | null>(null),
+    mainStat: new FormControl<string | null>(null),
     atkPercent: new FormControl<number | null>(null),
     hpPercent: new FormControl<number | null>(null),
     defPercent: new FormControl<number | null>(null),
     atk: new FormControl<number | null>(null),
     hp: new FormControl<number | null>(null),
     def: new FormControl<number | null>(null),
-    er: new FormControl<number | null>(null),
-    em: new FormControl<number | null>(null),
+    energyRecharge: new FormControl<number | null>(null),
+    elementalMastery: new FormControl<number | null>(null),
     critDmg: new FormControl<number | null>(null),
     critRate: new FormControl<number | null>(null),
   });
@@ -125,23 +125,22 @@ export class StatsCounter {
   }
 
   onPieceChange(value: Artifact | null) {
-    console.log(value);
+    const patchStats: Record<string, number> = {};
+
+    value?.stats.forEach((s) => {
+      if (s.key) {
+        patchStats[s.key] = s.value;
+      }
+    });
+
+    this.artifactForm.reset();
 
     this.artifactForm.patchValue({
       set: this.dataService.artefactSets().find((set) => set.nameRu === value?.setName) ?? null,
       setPartType:
         this.dataService.setParts().find((sp) => sp.nameRu === value?.setPartType) ?? null,
-      mainStat:
-        this.dataService.stats().find((stat) => {
-          return stat.nameRu === Array.from(value?.stats?.entries() || [])?.[0]?.[1]?.key;
-        }) ?? null,
-      atkPercent: value?.stats.get(ATK_PERCENT)?.value ?? null,
-      hpPercent: value?.stats.get(HP_PERCENT)?.value ?? null,
-      defPercent: value?.stats.get(DEF_PERCENT)?.value ?? null,
-      critDmg: value?.stats.get(CRIT_DMG)?.value ?? null,
-      critRate: value?.stats.get(CRIT_RATE)?.value ?? null,
-      er: value?.stats.get(ENERGY_RECHARGE)?.value ?? null,
-      em: value?.stats.get(ELEMENTAL_MASTERY)?.value ?? null,
+      mainStat: value?.mainStat?.name ?? null,
+      ...patchStats,
     });
   }
 
@@ -222,25 +221,14 @@ export class StatsCounter {
     const file = (event.target as HTMLInputElement).files?.[0];
 
     this.applyContrastFilter(file!).then((res) => {
-      this.parseTextService.tesseract(res!);
+      this.parseTextService.parseImage(res!);
     });
-
-    // if (file) {
-    //   const reader = new FileReader();
-    //   reader.onload = (e) => {
-    //     const base64 = e.target?.result as string;
-    //     this.parseTextService.OCRSpace(base64);
-    //   };
-    //   reader.readAsDataURL(file);
-    // }
   }
 
   calculate() {
     this.#checkMainStatDuplicate();
 
     const formData = this.artifactForm.getRawValue();
-
-    console.log(formData);
 
     // const artefact: Artefact = {
     //   atkPercent: +(formData.atkPercent ?? 0 / 5).toFixed(3),
@@ -291,16 +279,20 @@ export class StatsCounter {
   }
 
   #setFunction(character: Character, a: Artefact): string | null {
-    const { set } = this.artifactForm.getRawValue();
+    const { set, mainStat } = this.artifactForm.getRawValue();
+
+    const ms = this.dataService
+      .stats()
+      .find((s) => s.nameRu.toLowerCase() === mainStat?.toLowerCase());
 
     if (!set) return 'Введи сет';
     let error = true;
     if (a.setPartType?.key === SetPartKey.Sands)
-      error = a.mainStat && character.clockStats.includes(a.mainStat.id) ? false : true;
+      error = a.mainStat && character.clockStats.includes(ms?.id || '') ? false : true;
     if (a.setPartType?.key === SetPartKey.Goblet)
-      error = a.mainStat && character.gobletStats.includes(a.mainStat.id) ? false : true;
+      error = a.mainStat && character.gobletStats.includes(ms?.id || '') ? false : true;
     if (a.setPartType?.key === SetPartKey.Circlet)
-      error = a.mainStat && character.crownStats.includes(a.mainStat.id) ? false : true;
+      error = a.mainStat && character.crownStats.includes(ms?.id || '') ? false : true;
     if (a.setPartType?.key === SetPartKey.Flower || a.setPartType?.key === SetPartKey.Plume)
       error = false;
     if (error) return null;
@@ -333,18 +325,13 @@ export class StatsCounter {
       char.perfectStats,
       this.dataService.stats(),
     );
-    console.log(
-      char.nameEn,
-      this.extractStatsPipe.transform(char.goodStats, this.dataService.stats()),
-    );
-    console.log(
-      char.nameEn,
-      this.extractStatsPipe.transform(char.okStats, this.dataService.stats()),
-    );
+    const mainStat = this.dataService
+      .stats()
+      .find((s) => s.nameRu.toLowerCase() === art.mainStat?.toLowerCase());
 
     for (const stat of perfectStats) {
       if (
-        art.mainStat?.id === stat.id ||
+        mainStat?.id === stat.id ||
         art.setPartType?.key === SetPartKey.Flower ||
         art.setPartType?.key === SetPartKey.Plume
       ) {
@@ -360,8 +347,10 @@ export class StatsCounter {
         art.atkPercent && this.dataService.stats().find((s) => s.key === StatKey.AtkPercent),
         art.hpPercent && this.dataService.stats().find((s) => s.key === StatKey.HpPercent),
         art.defPercent && this.dataService.stats().find((s) => s.key === StatKey.DefPercent),
-        art.er && this.dataService.stats().find((s) => s.key === StatKey.EnergyRecharge),
-        art.em && this.dataService.stats().find((s) => s.key === StatKey.ElementalMastery),
+        art.energyRecharge &&
+          this.dataService.stats().find((s) => s.key === StatKey.EnergyRecharge),
+        art.elementalMastery &&
+          this.dataService.stats().find((s) => s.key === StatKey.ElementalMastery),
       ].filter(Boolean) as Stat[]
     ).map((s) => s.id);
 
@@ -392,8 +381,6 @@ export class StatsCounter {
           Math.min(4 - char.goodStats.length - char.perfectStats.length, char.okStats.length),
         );
 
-    console.log(char.nameEn, perfectScore, count);
-
     return count == perfectScore
       ? 'Великолепно'
       : count > perfectScore - 10
@@ -406,10 +393,24 @@ export class StatsCounter {
   }
 
   #checkMainStatDuplicate(): undefined | never {
-    const { atkPercent, hpPercent, defPercent, atk, hp, critDmg, critRate, er, em, mainStat } =
-      this.artifactForm.getRawValue();
+    const {
+      atkPercent,
+      hpPercent,
+      defPercent,
+      atk,
+      hp,
+      critDmg,
+      critRate,
+      energyRecharge,
+      elementalMastery,
+      mainStat,
+    } = this.artifactForm.getRawValue();
 
-    if (!mainStat) {
+    let parsedMainStat = this.dataService
+      .stats()
+      .find((s) => s.nameRu.toLowerCase() === mainStat?.toLowerCase());
+
+    if (!parsedMainStat) {
       alert('Введи верхний стат');
       throw Error('Введи верхний стат');
     }
@@ -422,16 +423,14 @@ export class StatsCounter {
       { value: hp, key: StatKey.Hp },
       { value: critDmg, key: StatKey.CritDmg },
       { value: critRate, key: StatKey.CritRate },
-      { value: er, key: StatKey.EnergyRecharge },
-      { value: em, key: StatKey.ElementalMastery },
+      { value: energyRecharge, key: StatKey.EnergyRecharge },
+      { value: elementalMastery, key: StatKey.ElementalMastery },
     ];
 
-    if (!mainStat?.repeatable) return;
+    if (!parsedMainStat?.repeatable) return;
 
     for (let i = 0; i < inputs.length; i++) {
-      if (Number(inputs[i].value) > 0 && inputs[i].key === mainStat?.key) {
-        console.log(inputs[i], i);
-
+      if (Number(inputs[i].value) > 0 && inputs[i].key === parsedMainStat?.key) {
         alert('Верхний и нижний стат повторяться не могут!');
         throw Error('Верхний и нижний стат повторяться не могут!');
       }

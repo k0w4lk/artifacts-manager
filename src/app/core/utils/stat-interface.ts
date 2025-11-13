@@ -3,6 +3,7 @@ export interface Stat {
   key: string;
   nameEn: string;
   nameRu: string;
+  percent: boolean;
   repeatable: boolean;
 }
 

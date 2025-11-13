@@ -22,11 +22,11 @@ export type Artefact = {
   atk: number | null;
   def: number | null;
   hp: number | null;
-  em: number | null;
-  er: number | null;
+  elementalMastery: number | null;
+  energyRecharge: number | null;
   critDmg: number | null;
   critRate: number | null;
   set: ArtifactSet | null;
-  mainStat: Stat | null;
+  mainStat: string | null;
   setPartType: SetPart | null;
 };
