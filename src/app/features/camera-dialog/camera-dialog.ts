@@ -101,8 +101,7 @@ export class CameraDialog implements AfterViewInit {
     if (!this.tempCanvas) return;
 
     const data = this.tempCanvas.toDataURL('image/png');
-    // this.parseTextService.OCRSpace(data);
-    this.parseTextService.tesseract(this.dataURLtoFile(data, 'art.png'));
+    this.parseTextService.parseImage(this.dataURLtoFile(data, 'art.png'));
     this.matDialogRef.close();
   }
 
