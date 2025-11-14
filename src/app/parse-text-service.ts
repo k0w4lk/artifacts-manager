@@ -2,6 +2,8 @@ import { inject, Injectable, signal } from '@angular/core';
 import { createWorker } from 'tesseract.js';
 import { DataService } from './core/services/data-service';
 import { ALL_STATS, ArtefactSetPart } from './core/utils/stat-names';
+import { S } from '@angular/cdk/keycodes';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface Artifact {
   setName: string;
@@ -23,14 +25,27 @@ export interface Stat {
 })
 export class ParseTextService {
   readonly dataService = inject(DataService);
+  readonly matSnackBar = inject(MatSnackBar);
 
   res = signal<Artifact | null>(null);
 
+  log = signal<any>({});
+
   parseImage(file: File): void {
     this.tesseract(file)
-      .then((res) => this.res.set(res))
+      .then((res) => {
+        this.matSnackBar.open('Parsed with Tessearct', 'Got it', {
+          horizontalPosition: 'start',
+          verticalPosition: 'top',
+        });
+        this.res.set(res);
+      })
       .catch(() => {
-        this.OCRSpace(file).then((res) => this.res.set(res));
+        this.OCRSpace(file).then((res) => {
+          this.matSnackBar.open('Parsed with OCRSpace');
+
+          this.res.set(res);
+        });
       });
   }
 
@@ -72,7 +87,7 @@ export class ParseTextService {
       .then((res) => res.json())
       .then((res) => {
         const text = res.ParsedResults[0].ParsedText;
-        return this.#parse(text);
+        return this.#parse(text, true);
       });
   }
 
@@ -89,7 +104,9 @@ export class ParseTextService {
     return this.#parse(res);
   }
 
-  #parse(text: string): Promise<any> {
+  #parse(text: string, lastAttempt = false): Promise<any> {
+    // this.log.update((s) => ({ ...s, text }));
+
     return new Promise((resolve, reject) => {
       const setPart = Object.values(ArtefactSetPart).find((part) => text.includes(part)) || '';
       const mainStatRegex = new RegExp(`(${ALL_STATS?.join('|')}).*\\n*(\\d+[,\\s]*\\d*)(%*)`, 'm');
@@ -106,6 +123,8 @@ export class ParseTextService {
           .find((art) => text.toLowerCase().includes(art.nameRu.toLowerCase()))?.nameRu || '';
 
       const stats = text.match(statRegex)?.slice(-4);
+
+      if (!lastAttempt && (stats?.length ?? 0) < 4) reject(`Not all stats were parsed`);
 
       let mainStatRes: Stat | null = null;
       if (mainStat) {
@@ -125,7 +144,8 @@ export class ParseTextService {
 
         const value = +statValue.replace('%', '').replace(' ', '').replace(',', '.');
 
-        if (Number.isNaN(value)) reject(`Value for stat "${statName}" was parsed with failure`);
+        if (!lastAttempt && Number.isNaN(value))
+          reject(`Value for stat "${statName}" was parsed with failure`);
 
         statsMap.set(statName, {
           key: this.dataService
@@ -138,6 +158,14 @@ export class ParseTextService {
           percent: statValue.includes('%'),
         });
       });
+      this.log.update((s) => ({
+        ...s,
+        setName,
+        setPartType: setPart,
+        mainStat: mainStatRes,
+        stats: statsMap.values(),
+      }));
+
       resolve({ setName, setPartType: setPart, mainStat: mainStatRes, stats: statsMap });
     });
   }

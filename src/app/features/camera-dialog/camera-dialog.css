@@ -7,11 +7,14 @@
 }
 
 .video {
-  object-fit: cover;
-  width: 90%;
+  object-fit: contain;
+  height: auto;
+  width: 100svw;
 }
 
 .canvas {
+  height: 90svh;
+  width: 90svw;
 }
 
 .camera-focus-area {

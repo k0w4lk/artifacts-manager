@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, JsonPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,10 +11,12 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { map, Observable, startWith, switchMap } from 'rxjs';
+import { Camera } from '../../camera/camera';
 import { DataService } from '../../core/services/data-service';
 import { Result } from '../../core/utils/result-interface';
 import { ArtifactSet } from '../../core/utils/set-interface';
@@ -24,23 +26,13 @@ import { Artefact, Character } from '../../core/utils/types';
 import { Artifact, ParseTextService } from '../../parse-text-service';
 import { ExtractStatsPipe } from '../../ui/pipes/extract-stats-pipe';
 import { Results } from '../results/results';
-import { MatCardModule } from '@angular/material/card';
-import { Camera } from '../../camera/camera';
-import {
-  ATK_PERCENT,
-  CRIT_DMG,
-  CRIT_RATE,
-  DEF_PERCENT,
-  ELEMENTAL_MASTERY,
-  ENERGY_RECHARGE,
-  HP_PERCENT,
-} from '../../core/utils/stat-names';
 
 @Component({
   selector: 'app-stats-counter',
   imports: [
     AsyncPipe,
     Camera,
+    JsonPipe,
     MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,

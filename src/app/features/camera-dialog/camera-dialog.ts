@@ -36,6 +36,8 @@ export class CameraDialog implements AfterViewInit {
 
   streaming = false;
 
+  res = signal<any>({});
+
   readonly photoTaken = signal<boolean>(false);
 
   ngAfterViewInit(): void {
@@ -51,6 +53,11 @@ export class CameraDialog implements AfterViewInit {
 
       this.width = video.videoWidth;
       this.height = video.videoHeight;
+
+      this.res.set({
+        w: this.width,
+        h: this.height,
+      });
 
       const sh = this.height * 0.95;
       const sw = (sh * 4) / 7;

@@ -16,6 +16,8 @@ export class Camera {
       .getUserMedia({
         video: {
           facingMode: 'environment',
+          width: { ideal: 4000 },
+          height: { ideal: 4000 },
         },
         audio: false,
       })

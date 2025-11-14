@@ -7,6 +7,8 @@
     [style.width.px]="videoClientWidth"
     [style.height.px]="videoClientHeight"
   ></div>
+
+  <pre style="position: absolute; top: 20%; color: red">{{ res() | json }}</pre>
 </div>
 
 <canvas #canvas class="canvas" [class.hidden]="!photoTaken()"></canvas>
